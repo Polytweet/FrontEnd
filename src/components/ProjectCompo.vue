@@ -1,0 +1,31 @@
+<template >
+  <div class="container">
+    <h1>PolyTweet</h1>
+  </div>
+</template>
+
+
+ 
+
+<script>
+export default {
+  name: "ProjectCompo",
+  mounted() {},
+  created() {},
+  methods: {}
+};
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+h1::after {
+  content: "";
+  display: block;
+  margin: 10px auto;
+  margin-bottom: 5%;
+  width: 10%;
+  height: 5px;
+  background: #333;
+  transition: width 0.5s;
+}
+</style>

@@ -1,51 +1,106 @@
 <template>
   <div>
-    <div class="wrapperNav mx-auto">
-      <b-navbar toggleable="sm" type="light" variant="light" class="col-lg-8 col-12">
-        <div class="row d-flex align-items-center w-100 flex-wrap">
-          <div class="col-lg-8 col-6 d-flex align-items-center searchPart">
-            <div class="col-1 mr-3">
+    <!-- Sidebar -->
+    <aside :class="{ clodedSideNav: openSideNav}">
+      <ul class="list-unstyled components">
+        <li class="asideLink d-flex align-items-center border-bottom title-link">
+          <a href="/">Polytweet</a>
+        </li>
+        <li class="asideLink d-flex align-items-center">
+          <i class="far fa-list-alt"></i>
+          <span class="ml-4">Fuck</span>
+        </li>
+        <li class="asideLink d-flex align-items-center">
+          <i class="far fa-compass"></i>
+          <span class="ml-4">Le</span>
+        </li>
+        <li class="asideLink d-flex align-items-center">
+          <i class="far fa-map"></i>
+          <span class="ml-4">C</span>
+        </li>
+        <li class="asideLink d-flex align-items-center">
+          <i class="fas fa-chart-line"></i>
+          <span class="ml-4">S</span>
+        </li>
+        <li class="asideLink d-flex align-items-center">
+          <i class="far fa-heart"></i>
+          <span class="ml-4">S</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Overlay -->
+    <div class="overlay" :class="{ active: !openSideNav}" @click="openSideNav = !openSideNav"></div>
+
+    <!-- Search Nav -->
+    <div class="searchNavContainer mx-auto">
+      <b-navbar
+        toggleable="sm"
+        type="light"
+        variant="light"
+        class="col-lg-6 col-md-9 col-10 searchNav"
+      >
+        <div class="row align-items-center w-100">
+          <div
+            class="sidebarButton col-3 col-md-2 justify-content-center d-flex align-items-center"
+            @click="toggleNav()"
+          >
+            <i class="fas fa-bars"></i>
+          </div>
+          <div class="col-9 col-md-10 d-flex align-items-center inputContainer">
+            <input
+              id="searchBar"
+              class="inputSearchbar w-100"
+              type="text"
+              placeholder="Entrez votre recherche"
+            />
+            <div class="col-2 col-md-1">
               <div class="circle d-flex align-items-center justify-content-center">
                 <i class="fas fa-search btn-search mx-2"></i>
               </div>
             </div>
-            <input id="searchBar" class="searchbar w-75" type="text" placeholder="Search..." />
-          </div>
-          <div class="col-1 iconLink">
-            <i class="far fa-list-alt"></i>
-          </div>
-
-          <div class="col-1 iconLink">
-            <i class="far fa-compass"></i>
-          </div>
-          <div class="col-1 iconLink">
-            <i class="far fa-map"></i>
-          </div>
-          <div class="col-1 iconLink">
-            <img alt="Vue logo" src="../assets/logo.png" width="40" />
           </div>
         </div>
       </b-navbar>
     </div>
 
-    <div class="wrapper" :class="wrapperExp?'wrapperExpand':''">
-      <div class="menuWrapper" @click="wrapperExp = !wrapperExp">
+    <!-- Filter SideNav -->
+    <div class="filterSideNav" :class="wrapperExp?'filterSideNavExpand':''">
+      <div
+        class="filterItemContainer d-flex justify-content-center align-items-center"
+        @click="wrapperExp = !wrapperExp"
+      >
         <i class="fas fa-layer-group"></i>
       </div>
       <div class="col" v-if="wrapperExp">
-        <div class="row">
-          <i class="far fa-compass"></i>
+        <div
+          class="row"
+          :class="{ filterActive: currentFilter=='region'}"
+          @click="currentFilter = 'region'"
+        >
+          <i class="far fa-circle" v-if="currentFilter!='region'"></i>
+          <i class="far fa-check-circle" v-if="currentFilter=='region'"></i>
           <h6>Région</h6>
         </div>
-        <div class="row">
-          <i class="far fa-compass"></i>
+        <div
+          class="row"
+          :class="{ filterActive: currentFilter=='departement'}"
+          @click="currentFilter = 'departement'"
+        >
+          <i class="far fa-circle" v-if="currentFilter!='departement'"></i>
+          <i class="far fa-check-circle" v-if="currentFilter=='departement'"></i>
           <h6>
             Dépar-
             <br />tement
           </h6>
         </div>
-        <div class="row">
-          <i class="far fa-compass"></i>
+        <div
+          class="row"
+          :class="{ filterActive: currentFilter=='commune'}"
+          @click="currentFilter = 'commune'"
+        >
+          <i class="far fa-circle" v-if="currentFilter!='commune'"></i>
+          <i class="far fa-check-circle" v-if="currentFilter=='commune'"></i>
           <h6>Commune</h6>
         </div>
       </div>
@@ -62,35 +117,121 @@ export default {
 
   data() {
     return {
-      wrapperExp: false
+      wrapperExp: false,
+      openSideNav: true,
+      currentFilter: ""
     };
   },
   mounted() {},
   created() {},
-  methods: {}
+  methods: {
+    toggleNav() {
+      this.openSideNav = !this.openSideNav;
+    }
+  }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.wrapperNav {
+/* =============================
+            SIDEBAR
+ ============================= */
+aside {
+  display: block;
+  min-width: 250px;
+  max-width: 250px;
+  background: #fff;
+  color: #798186c2;
+  transition: all 0.3s;
+  height: 100vh;
+  position: absolute;
+  z-index: 999;
+}
+aside.clodedSideNav {
+  margin-left: -260px;
+}
+
+/*Title ( Polytweet)*/
+aside li.title-link {
+  height: 95px !important;
+  /*  margin-left: 15px;
+  margin-right: 10px;
+  margin-bottom: 10px; */
+  justify-content: center;
+  padding-left: 0px !important;
+}
+aside li.title-link a {
+  text-decoration: none;
+  color: #6892fc;
+  font-family: "Airbnb Cereal App Black";
+  font-size: 24px;
+  /*  margin-left: -15px; */
+}
+
+/*Other Links*/
+.asideLink {
+  height: 50px;
+  padding-left: 15%;
+  cursor: pointer;
+}
+.asideLink i {
+  font-size: 20px;
+  color: #798186c2;
+}
+.asideLink.border-bottom {
+  border-bottom: 1px solid #e8eaed;
+}
+.asideLink:not(.title-link):hover {
+  background-color: #e8eaed;
+}
+
+/*Overlay*/
+.overlay {
+  display: none;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 997;
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+.overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+/* =============================
+           SEARCH NAV
+ ============================= */
+.searchNavContainer {
   width: 100vw;
   display: flex;
   justify-content: center;
 }
-nav {
+/*SearchNav*/
+.searchNav {
   position: absolute;
-
   top: 3%;
-  z-index: 999;
+  z-index: 510;
   border-radius: 25em;
   cursor: pointer;
   box-shadow: 0 1.25rem 1.562rem -1.25rem rgba(0, 0, 0, 0.4);
   border: 1px solid #eaf1f3;
   background-color: #fff !important;
-  padding: 0;
+  padding: 0.75rem 1rem;
 }
-.searchbar {
+
+/*Button who open the sidenav*/
+.sidebarButton i {
+  font-size: 24px;
+  padding: 7px 10px;
+  color: #798186c2;
+}
+
+/*Input of searchNav*/
+.inputSearchbar {
   float: right;
   color: #333;
   padding: 6px 10px;
@@ -98,87 +239,57 @@ nav {
   border: none;
   margin-top: 1px;
   margin-right: 8px;
-  font-family: "Segoe UI Light", "Segoe UI", "Segoe", Tahoma, Helvetica, Arial,
-    sans-serif;
   font-size: 1em;
   font-weight: bold;
   border-bottom: #798186c2 solid 2px;
   transition: 0.3s;
 }
-
-.searchbar::placeholder {
+.inputSearchbar::placeholder {
   color: #798186c2;
-  font-family: "Segoe UI Light", "Segoe UI", "Segoe", Tahoma, Helvetica, Arial,
-    sans-serif;
   font-size: 1em;
   font-weight: bold;
-  /* transition: 0.2s; */
 }
+
+/*Button validate search*/
 .circle {
   width: 40px;
   height: 40px;
   background-color: #6892fc;
   border-radius: 50%;
 }
-.searchPart,
-.iconLink {
-  padding: 0.75rem 1rem;
-}
 .btn-search {
   color: #fff;
   font-size: 1.25em;
 }
 
-.iconLink {
-  border-left: 3px solid #eaf1f3;
-  font-size: 26px;
-  color: #798186c2;
-  height: 74px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Filter */
-.wrapper {
+/* =============================
+           FILTRES
+ ============================= */
+.filterSideNav {
   background: #fff;
-  width: 73px;
+  width: 66px;
   height: auto;
-  /*height: 385px;*/
   border-radius: 25em !important;
   overflow: hidden;
   position: absolute;
   right: 1%;
   top: 3%;
-  z-index: 999;
+  z-index: 510;
   box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
     0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
   max-height: 72px;
-  transition: max-height 0.15s ease-out;
+  transition: max-height 0.25s ease-out;
   cursor: pointer;
 }
-.wrapperExpand {
-  width: 73px;
+.filterSideNavExpand {
+  width: 66px;
   height: auto;
   transition: all 20s ease-in-out;
   max-height: 500px;
   transition: max-height 0.25s ease-in;
 }
-.menuWrapper {
-  width: 73px;
-  height: 73px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.menuWrapper .fas {
-  padding: 23px 0;
-  width: 73px;
-  height: 73px;
-  color: #798186c2;
-  font-size: 26px;
-}
-.wrapper .row {
+
+.filterSideNav .row {
   padding: 0px;
   border-top: 2px solid #798186c2;
   display: flex;
@@ -186,11 +297,49 @@ nav {
   justify-content: center;
   height: 80px;
 }
-.wrapper h6 {
+
+.filterSideNav h6 {
+  word-break: break-word;
   font-size: 0.75rem;
 }
-.fa-compass {
+.filterSideNav i {
+  font-size: 22px;
+  color: #798186c2;
+}
+
+.filterItemContainer {
+  width: 66px;
+  height: 66px;
+}
+.filterItemContainer i {
   color: #798186c2;
   font-size: 26px;
+}
+.filterSideNav .row.filterActive,
+.filterSideNav .row.filterActive i {
+  color: #6892fc;
+}
+
+/* =============================
+           RESPONSIVE
+ ============================= */
+/*Mobile*/
+@media (max-width: 576px) {
+  .inputContainer,
+  .inputSearchbar {
+    padding: 0px;
+  }
+  .filterSideNav {
+    width: 50px;
+    top: 15%;
+  }
+  .filterItemContainer {
+    width: 50px;
+    height: 50px;
+  }
+  .filterSideNav h6 {
+    word-break: break-word;
+    font-size: 0.6rem;
+  }
 }
 </style>

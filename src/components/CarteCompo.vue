@@ -7,6 +7,7 @@
         crossorigin=""></script>
  
 <script>
+import { access } from "fs";
 export default {
   name: "CarteCompo",
 
@@ -19,6 +20,7 @@ export default {
   mounted() {
     this.getCurrentLocation();
   },
+
   created() {
     this.initLayers();
     this.septRegion();
@@ -51,11 +53,16 @@ export default {
     },
     initLayers() {},
     initMap() {
-      this.map = L.map("map").setView([this.latitude, this.longitude], 12);
+      this.map = L.map("map", { zoomControl: false }).setView(
+        [this.latitude, this.longitude],
+        12
+      );
       this.tileLayer = L.tileLayer(
         "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
-        {
+        /*         "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoicHR1dCIsImEiOiJjazFkZzdjbmgwN2N3M2JwYXlib2F5cG5sIn0.dJkqPUkufHUp4OIZ82GRPw",
+         */ {
           maxZoom: 18,
+          id: "mapbox.streets",
           attribution:
             '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>'
         }
