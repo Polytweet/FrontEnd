@@ -1,6 +1,7 @@
 <template >
   <div class="container">
     <h1>PolyTweet</h1>
+     <div>{{communes}}</div>
   </div>
 </template>
 
@@ -8,11 +9,30 @@
  
 
 <script>
+import gql from 'graphql-tag';
 export default {
   name: "ProjectCompo",
   mounted() {},
-  created() {},
-  methods: {}
+  created() {
+  
+  },
+  methods: {},
+ apollo: {
+    // Simple query that will update the 'hello' vue property
+    communes: gql`query {
+ communes(code_dept: "69") {
+    type
+    property: fields{
+      population
+      superficie
+    }
+    geometry{
+      type: _type
+      coordinates
+    }
+	}
+}`,
+  },
 };
 </script>
 
