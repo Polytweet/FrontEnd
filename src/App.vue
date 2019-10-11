@@ -130,9 +130,14 @@ a {
 }
 
 /*Leaflet*/
-@media (max-width: 768px) {
-  .leaflet-control-zoom {
-    visibility: hidden;
-  }
+
+.leaflet-control {
+  font-family: "Airbnb Cereal App Bold" !important;
+  text-align: left;
+  margin-top: 10px;
+  background-color: white !important;
+  width: 275px;
+  position: absolute;
+  top: 20px;
 }
 </style>
