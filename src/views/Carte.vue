@@ -1,7 +1,7 @@
 <template>
   <div>
-    <SearchBar></SearchBar>
-    <CarteCompo></CarteCompo>
+    <SearchBar @filterData="updateFilter" @sideNavState="updateSideState"></SearchBar>
+    <CarteCompo :currentFilter="childData" :currentSideState="childSideState"></CarteCompo>
   </div>
 </template>
 
@@ -15,6 +15,20 @@ export default {
   components: {
     CarteCompo,
     SearchBar
+  },
+  data: function() {
+    return {
+      childData: "",
+      childSideState: ""
+    };
+  },
+  methods: {
+    updateFilter(variable) {
+      this.childData = variable;
+    },
+    updateSideState(variable) {
+      this.childSideState = variable;
+    }
   }
 };
 </script>
