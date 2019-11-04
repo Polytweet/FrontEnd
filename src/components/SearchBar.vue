@@ -119,16 +119,8 @@ export default {
     return {
       wrapperExp: false,
       openSideNav: true,
-      currentFilter: "commune"
+      currentFilter: ""
     };
-  },
-  watch: {
-    currentFilter: function() {
-      this.$emit("filterData", this.currentFilter);
-    },
-    openSideNav: function() {
-      this.$emit("sideNavState", this.openSideNav);
-    }
   },
   mounted() {},
   created() {},

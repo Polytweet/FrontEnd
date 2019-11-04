@@ -10,7 +10,7 @@
       :options="{zoomControl: false}"
     >
       <l-tile-layer :url="url"></l-tile-layer>
-      <div v-if="communes.length>0 && currentSideState">
+      <div v-if="communes.length>0 ">
         <l-choropleth-layer
           :data="communesInfo"
           titleKey="nom_com"
@@ -51,24 +51,7 @@ export default {
     "l-info-control": InfoControl,
     "l-choropleth-layer": ChoroplethLayer
   },
-  props: {
-    currentFilter: {
-      type: String
-    },
-    currentSideState: {
-      type: Boolean
-    }
-  },
-  watch: {
-    currentFilter: function() {
-      this.currentFilter == "region"
-        ? this.zoomUpdated(6)
-        : this.currentFilter == "departement"
-        ? this.zoomUpdated(8)
-        : this.zoomUpdated(12);
-    },
-    currentSideState: function() {}
-  },
+
   data() {
     return {
       url:
@@ -82,12 +65,12 @@ export default {
       colorScale: ["e7d090", "e9ae7b", "de7062"],
       value: {
         key: "population",
-        metric: " hab"
+        metric: " ha"
       },
       extraValues: [
         {
           key: "superficie",
-          metric: " ha"
+          metric: " km<sup>2</sup>"
         }
       ],
       mapOptions: {

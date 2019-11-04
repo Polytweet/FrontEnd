@@ -16,7 +16,6 @@
     "vue-apollo": "^3.0.0-beta.11",
     "vue-choropleth": "^0.3.1",
     "vue-router": "^3.0.3",
-    "vue-scroll-reveal": "^1.0.11",
     "vue2-leaflet": "^2.2.1",
     "vuex": "^3.0.1"
   },
