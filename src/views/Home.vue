@@ -77,7 +77,7 @@ export default {
   name: "home",
   data() {
     return {
-      currentNavLink: "home",
+      currentNavLink: "project",
       show: false
     };
   },
@@ -101,8 +101,6 @@ nav {
   background-color: transparent;
   width: 100%;
   font-family: "Airbnb Cereal App Bold";
-  position: absolute;
-  z-index: 999;
 }
 
 /* Brand */
