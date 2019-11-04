@@ -77,7 +77,7 @@ export default {
   name: "home",
   data() {
     return {
-      currentNavLink: "project",
+      currentNavLink: "home",
       show: false
     };
   },
