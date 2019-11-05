@@ -1,7 +1,7 @@
 <template>
   <div>
-    <SearchBar @filterData="updateFilter" @sideNavState="updateSideState"></SearchBar>
-    <CarteCompo :currentFilter="childData" :currentSideState="childSideState"></CarteCompo>
+    <SearchBar @sideNavState="updateSideState"></SearchBar>
+    <CarteCompo :currentSideState="childSideState"></CarteCompo>
   </div>
 </template>
 

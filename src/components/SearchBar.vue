@@ -119,13 +119,19 @@ export default {
     return {
       wrapperExp: false,
       openSideNav: true,
-      currentFilter: "commune"
     };
   },
+  computed: {
+    currentFilter: {
+      get () {
+        return this.$store.state.currentFilter
+      },
+      set (newV) {
+        this.$store.state.currentFilter = newV
+      }
+    }
+  },
   watch: {
-    currentFilter: function() {
-      this.$emit("filterData", this.currentFilter);
-    },
     openSideNav: function() {
       this.$emit("sideNavState", this.openSideNav);
     }

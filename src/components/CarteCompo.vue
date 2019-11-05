@@ -13,11 +13,11 @@
       <div v-if="communes.length>0 && currentSideState">
         <l-choropleth-layer
           :data="communesInfo"
-          titleKey="nom_com"
-          idKey="code_com"
+          titleKey="nom"
+          idKey="code"
           :value="value"
           :extraValues="extraValues"
-          geojsonIdKey="code_com"
+          geojsonIdKey="code"
           :geojson="{'type':'FeatureCollection','totalFeatures':18,'features':communes}"
           :colorScale="colorScale"
         >
@@ -41,6 +41,7 @@
 import { InfoControl, ChoroplethLayer } from "vue-choropleth";
 
 import { LMap, LTileLayer } from "vue2-leaflet";
+import axios from "axios";
 import gql from "graphql-tag";
 
 export default {
@@ -52,21 +53,11 @@ export default {
     "l-choropleth-layer": ChoroplethLayer
   },
   props: {
-    currentFilter: {
-      type: String
-    },
     currentSideState: {
       type: Boolean
     }
   },
   watch: {
-    currentFilter: function() {
-      this.currentFilter == "region"
-        ? this.zoomUpdated(6)
-        : this.currentFilter == "departement"
-        ? this.zoomUpdated(8)
-        : this.zoomUpdated(12);
-    },
     currentSideState: function() {}
   },
   data() {
@@ -98,29 +89,48 @@ export default {
   },
   apollo: {
     // Simple query that will update the 'communes' vue property
-    communes: gql`
-      query {
-        communes(code_dept: "69") {
-          type
-          properties: fields {
-            population
-            superficie
-            code_com
-            nom_com
-          }
-          geometry {
-            type: _type
-            coordinates
-          }
-        }
-      }
-    `
+    // communes: gql`
+    //   query {
+    //     communes(code_dept: "42") {
+    //       type
+    //       properties: fields {
+    //         population
+    //         superficie
+    //         code_com
+    //         nom_com
+    //       }
+    //       geometry {
+    //         type: _type
+    //         coordinates
+    //       }
+    //     }
+    //   }
+    // `
   },
   mounted() {
     this.getCurrentLocation();
-    this.getDataFromGeoJson();
+    this.getDeptDataFromGeoJson();
   },
-  created() {},
+  created() {
+    window.addEventListener('click', () => {
+      switch (this.$store.state.currentFilter) {
+        case "region": 
+          this.zoomUpdated(6);
+          break;
+        case "departement":
+          this.zoomUpdated(8);
+          this.value.key = 'rien';
+          this.value.metric = '';
+          this.extraValues = [];
+          break;
+        case "communes":
+          this.zoomUpdated(12);
+          break;
+        default:
+          this.zoom(13);
+      }
+    })
+  },
   methods: {
     zoomUpdated(zoom) {
       this.zoom = zoom;
@@ -132,7 +142,11 @@ export default {
       this.bounds = bounds;
     },
     getCoord(event) {
-      console.log(event);
+      axios.get('https://api.opencagedata.com/geocode/v1/json?q=' + event.latlng.lat + '+' + event.latlng.lng + '&key=6cb782be82c646cfb05d9471b7ca2961').then((res) => {
+        console.log(res.data.results[0].components.postcode.substring(0,2))
+        this.$store.state.currentFilter = 'commune'
+        this.zoomUpdated(12);
+      })
     },
 
     getCurrentLocation() {
@@ -162,7 +176,7 @@ export default {
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
-            communes(code_dept: "69") {
+            communes(code_dept: "42") {
               type
               properties: fields {
                 population
@@ -173,12 +187,44 @@ export default {
               geometry {
                 type: _type
                 coordinates
+                coordinatesMulti
               }
             }
           }
         `
       });
+      this.communes = resApollo.data.communes;
       resApollo.data.communes.forEach(element => {
+        this.communesInfo.push(element.properties);
+      });
+    },
+    async getDeptDataFromGeoJson() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            departements {
+              type
+              properties {
+                code
+                nom
+              }
+              geometry {
+                type: _type
+                coordinates
+                coordinatesMulti
+              }
+            }
+          }
+        `
+      });
+      this.communes = resApollo.data.departements;
+      this.communes.forEach((c) => {
+        if (c.geometry.coordinates.length === 0) {
+          c.geometry.coordinates = c.geometry.coordinatesMulti
+        }
+      })
+      resApollo.data.departements.forEach(element => {
+        element.properties.rien = ''
         this.communesInfo.push(element.properties);
       });
     }
