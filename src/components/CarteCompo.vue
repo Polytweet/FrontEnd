@@ -10,7 +10,7 @@
       :options="{zoomControl: false}"
     >
       <l-tile-layer :url="url"></l-tile-layer>
-      <div v-if="communes.length>0 && currentSideState">
+      <div v-if="(communes ? communes.length>0 : false) && currentSideState">
         <l-choropleth-layer
           :data="communesInfo"
           titleKey="nom"
@@ -21,7 +21,7 @@
           :geojson="{'type':'FeatureCollection','totalFeatures':18,'features':communes}"
           :colorScale="colorScale"
         >
-          <template slot-scope="props" v-if="communes.length>0">
+          <template slot-scope="props" v-if="(communes ? communes.length>0 : false)">
             <l-info-control
               :item="props.currentItem"
               :unit="props.unit"
@@ -64,8 +64,8 @@ export default {
     return {
       url:
         "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
-      zoom: 12,
-      center: [44.762632, 5.348876],
+      zoom: 6,
+      center: [46.443004, 2.878054],
       bounds: null,
       communes: {},
       communesInfo: [],
@@ -108,26 +108,34 @@ export default {
     // `
   },
   mounted() {
-    this.getCurrentLocation();
     this.getDeptDataFromGeoJson();
+    // this.getDataFromGeoJson(69)
   },
   created() {
     window.addEventListener('click', () => {
       switch (this.$store.state.currentFilter) {
-        case "region": 
+        case "regionN":
           this.zoomUpdated(6);
+          this.$store.state.currentFilter = 'region'
           break;
-        case "departement":
-          this.zoomUpdated(8);
+        case "departementN":
+          this.zoomUpdated(7);
+          this.getDeptDataFromGeoJson();
           this.value.key = 'rien';
           this.value.metric = '';
           this.extraValues = [];
+          this.$store.state.currentFilter = 'departement'
           break;
-        case "communes":
-          this.zoomUpdated(12);
+        case "communeN":
+          this.zoomUpdated(10);
+          this.value.key = 'population';
+          this.value.metric = 'hab';
+          this.extraValues = [{
+            key: "superficie",
+            metric: " ha"
+          }];
+          this.$store.state.currentFilter = 'commune'
           break;
-        default:
-          this.zoom(13);
       }
     })
   },
@@ -142,11 +150,19 @@ export default {
       this.bounds = bounds;
     },
     getCoord(event) {
-      axios.get('https://api.opencagedata.com/geocode/v1/json?q=' + event.latlng.lat + '+' + event.latlng.lng + '&key=6cb782be82c646cfb05d9471b7ca2961').then((res) => {
-        console.log(res.data.results[0].components.postcode.substring(0,2))
-        this.$store.state.currentFilter = 'commune'
-        this.zoomUpdated(12);
-      })
+      if (this.$store.state.currentFilter === 'departement') {
+        axios.get('https://api.opencagedata.com/geocode/v1/json?q=' + event.latlng.lat + '+' + event.latlng.lng + '&key=6cb782be82c646cfb05d9471b7ca2961').then((res) => {
+          console.log(res.data.results[0].components.postcode.substring(0,2))
+          this.center = [event.latlng.lat, event.latlng.lng],
+          this.$store.state.currentFilter = 'communeN'
+
+          this.getDataFromGeoJson(res.data.results[0].components.postcode.substring(0,2))
+        })
+      }
+      if (this.$store.state.currentFilter === 'region') {
+        this.center = [event.latlng.lat, event.latlng.lng],
+          this.$store.state.currentFilter = 'departementN'
+      }
     },
 
     getCurrentLocation() {
@@ -172,17 +188,18 @@ export default {
       return null;
     },
 
-    async getDataFromGeoJson() {
+    async getDataFromGeoJson(codeDept) {
+      console.log(codeDept)
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
-            communes(code_dept: "42") {
+            communes(code_dept: "${codeDept}") {
               type
               properties: fields {
                 population
                 superficie
-                code_com
-                nom_com
+                code: code_com
+                nom: nom_com
               }
               geometry {
                 type: _type
@@ -194,9 +211,17 @@ export default {
         `
       });
       this.communes = resApollo.data.communes;
+      this.communes.forEach((c) => {
+        if (c.geometry.type !== "Polygon") {
+          c.geometry.coordinates = c.geometry.coordinatesMulti
+        }
+      })
+      this.communesInfo = []
       resApollo.data.communes.forEach(element => {
+        element.properties.rien = ''
         this.communesInfo.push(element.properties);
       });
+      console.log(this.communes)
     },
     async getDeptDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
@@ -219,10 +244,11 @@ export default {
       });
       this.communes = resApollo.data.departements;
       this.communes.forEach((c) => {
-        if (c.geometry.coordinates.length === 0) {
+        if (c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false) {
           c.geometry.coordinates = c.geometry.coordinatesMulti
         }
       })
+      this.communesInfo = []
       resApollo.data.departements.forEach(element => {
         element.properties.rien = ''
         this.communesInfo.push(element.properties);
