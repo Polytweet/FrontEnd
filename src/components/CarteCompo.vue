@@ -212,9 +212,11 @@ export default {
       });
       this.communes = resApollo.data.communes;
       this.communes.forEach((c) => {
-        if (c.geometry.type !== "Polygon") {
-          c.geometry.coordinates = c.geometry.coordinatesMulti
-        }
+        console.log(c.geometry.type)
+        console.log(c)
+        // if (!c.geometry.coordinatesMulti) {
+        //   c.geometry.coordinates = c.geometry.coordinatesMulti
+        // }
       })
       this.communesInfo = []
       resApollo.data.communes.forEach(element => {
@@ -222,6 +224,33 @@ export default {
         this.communesInfo.push(element.properties);
       });
       console.log(this.communes)
+      this.updateZoom()
+    },
+    updateZoom () {
+      switch (this.$store.state.currentFilter) {
+        case "regionN":
+          this.zoomUpdated(6);
+          this.$store.state.currentFilter = 'region'
+          break;
+        case "departementN":
+          this.zoomUpdated(7);
+          this.getDeptDataFromGeoJson();
+          this.value.key = 'rien';
+          this.value.metric = '';
+          this.extraValues = [];
+          this.$store.state.currentFilter = 'departement'
+          break;
+        case "communeN":
+          this.zoomUpdated(10);
+          this.value.key = 'population';
+          this.value.metric = 'hab';
+          this.extraValues = [{
+            key: "superficie",
+            metric: " ha"
+          }];
+          this.$store.state.currentFilter = 'commune'
+          break;
+      }
     },
     async getDeptDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
@@ -253,6 +282,7 @@ export default {
         element.properties.rien = ''
         this.communesInfo.push(element.properties);
       });
+      this.updateZoom()
     }
   }
 };
