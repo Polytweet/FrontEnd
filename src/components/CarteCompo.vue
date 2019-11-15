@@ -114,9 +114,13 @@ export default {
   created() {
     window.addEventListener('click', () => {
       switch (this.$store.state.currentFilter) {
-        case "regionN":
+        case "franceN":
           this.zoomUpdated(6);
-          this.$store.state.currentFilter = 'region'
+          this.getDeptDataFromGeoJson();
+          this.value.key = 'rien';
+          this.value.metric = '';
+          this.extraValues = [];
+          this.$store.state.currentFilter = 'france'
           break;
         case "departementN":
           this.zoomUpdated(7);
@@ -137,6 +141,11 @@ export default {
           this.$store.state.currentFilter = 'commune'
           break;
       }
+    })
+    window.addEventListener('load', () => {
+      document.getElementsByClassName('getPosition')[0].addEventListener('click', () => {
+        this.getCurrentLocation()
+      })
     })
   },
   methods: {
@@ -159,7 +168,7 @@ export default {
           this.getDataFromGeoJson(res.data.results[0].components.postcode.substring(0,2))
         })
       }
-      if (this.$store.state.currentFilter === 'region') {
+      if (this.$store.state.currentFilter === 'france') {
         this.center = [event.latlng.lat, event.latlng.lng],
           this.$store.state.currentFilter = 'departementN'
       }
@@ -173,6 +182,12 @@ export default {
             console.log(position);
 
             this.center = [position.coords.latitude, position.coords.longitude];
+            axios.get('https://api.opencagedata.com/geocode/v1/json?q=' + position.coords.latitude + '+' + position.coords.longitude + '&key=6cb782be82c646cfb05d9471b7ca2961').then((res) => {
+              console.log(res.data.results[0].components.postcode.substring(0,2))
+              this.$store.state.currentFilter = 'communeN'
+
+              this.getDataFromGeoJson(res.data.results[0].components.postcode.substring(0,2))
+            })
           },
           function(error) {
             alert(error.message);
@@ -189,7 +204,6 @@ export default {
     },
 
     async getDataFromGeoJson(codeDept) {
-      console.log(codeDept)
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -211,13 +225,6 @@ export default {
         `
       });
       this.communes = resApollo.data.communes;
-      this.communes.forEach((c) => {
-        console.log(c.geometry.type)
-        console.log(c)
-        // if (!c.geometry.coordinatesMulti) {
-        //   c.geometry.coordinates = c.geometry.coordinatesMulti
-        // }
-      })
       this.communesInfo = []
       resApollo.data.communes.forEach(element => {
         element.properties.rien = ''
@@ -228,9 +235,13 @@ export default {
     },
     updateZoom () {
       switch (this.$store.state.currentFilter) {
-        case "regionN":
+        case "franceN":
           this.zoomUpdated(6);
-          this.$store.state.currentFilter = 'region'
+          this.getDeptDataFromGeoJson();
+          this.value.key = 'rien';
+          this.value.metric = '';
+          this.extraValues = [];
+          this.$store.state.currentFilter = 'france'
           break;
         case "departementN":
           this.zoomUpdated(7);

@@ -75,12 +75,12 @@
       <div class="col" v-if="wrapperExp">
         <div
           class="row"
-          :class="{ filterActive: currentFilter=='region'}"
-          @click="currentFilter = 'regionN'"
+          :class="{ filterActive: currentFilter=='france'}"
+          @click="currentFilter = 'franceN'"
         >
-          <i class="far fa-circle" v-if="currentFilter!='region'"></i>
-          <i class="far fa-check-circle" v-if="currentFilter=='region'"></i>
-          <h6>Région</h6>
+          <i class="far fa-circle" v-if="currentFilter!='france'"></i>
+          <i class="far fa-check-circle" v-if="currentFilter=='france'"></i>
+          <h6>France</h6>
         </div>
         <div
           class="row"
@@ -104,6 +104,11 @@
           <h6>Commune</h6>
         </div>
       </div>
+    </div>
+    <div
+      class="getPosition d-flex justify-content-center align-items-center"
+    >
+    <i class="fas fa-map-marker-alt"></i>
     </div>
   </div>
 </template>
