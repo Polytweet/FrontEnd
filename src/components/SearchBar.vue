@@ -1,64 +1,65 @@
 <template>
   <div>
-    <!-- Sidebar -->
-    <aside :class="{ clodedSideNav: openSideNav}">
-      <ul class="list-unstyled components">
-        <li class="asideLink d-flex align-items-center border-bottom title-link">
-          <a href="/">Polytweet</a>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-list-alt"></i>
-          <span class="ml-4">Fuck</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-compass"></i>
-          <span class="ml-4">Le</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-map"></i>
-          <span class="ml-4">C</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="fas fa-chart-line"></i>
-          <span class="ml-4">S</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-heart"></i>
-          <span class="ml-4">S</span>
-        </li>
-      </ul>
-    </aside>
-
-    <!-- Overlay -->
-    <div class="overlay" :class="{ active: !openSideNav}" @click="openSideNav = !openSideNav"></div>
-
     <!-- Search Nav -->
-    <div class="searchNavContainer mx-auto">
+    <div class="searchNavContainer mx-auto" @mouseleave="inputSearchFocus = false">
       <b-navbar
         toggleable="sm"
         type="light"
         variant="light"
         class="col-lg-6 col-md-9 col-10 searchNav"
       >
-        <div class="row align-items-center w-100">
-          <div
-            class="sidebarButton col-3 col-md-2 justify-content-center d-flex align-items-center"
-            @click="toggleNav()"
-          >
-            <i class="fas fa-bars"></i>
-          </div>
-          <div class="col-9 col-md-10 d-flex align-items-center inputContainer">
+        <div class="row align-items-center w-100 col-12">
+          <a href="/" class="sidebarButton col-3 col-md-2 col-lg-1 d-flex align-items-center">
+            <img alt="Vue logo" src="../assets/logo.png" width="40" />
+          </a>
+          <div class="col-lg-11 col-10 d-flex align-items-center inputContainer">
             <input
               id="searchBar"
-              class="inputSearchbar w-100"
+              class="inputSearchbar w-100 effect-8"
               type="text"
-              placeholder="Entrez votre recherche"
+              placeholder="Choisissez une actualité"
+              @focus="inputSearchFocus = true"
+              v-model="filter"
             />
-            <div class="col-2 col-md-1">
-              <div class="circle d-flex align-items-center justify-content-center">
-                <i class="fas fa-search btn-search mx-2"></i>
+            <span class="focus-border">
+              <i></i>
+            </span>
+          </div>
+        </div>
+        <!-- News Part -->
+        <div class="col-12 info-part" v-bind:class="{ searchExpand: inputSearchFocus }">
+          <br />
+          <!-- NewsSelected -->
+          <div class="newsFilter d-flex align-items-start">
+            <div class="d-flex flex-wrap w-100">
+              <!-- Chips -->
+              <div class="chip mt-1" v-for="chips in chipsList" v-bind:key="chips.title">
+                <span class="text-left">{{chips.title}}</span>
+                <i
+                  class="fas fa-times-circle ml-1 float-right text-right"
+                  v-on:click="removeToChipsList(chips)"
+                ></i>
+              </div>
+              <!-- /Chips -->
+            </div>
+          </div>
+
+          <!-- List Header -->
+          <div class="newsList mt-4">
+            <div class="d-flex justify-content-between">
+              <h6 class="mr-3 text-left">News</h6>
+              <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
+            </div>
+            <!-- List -->
+            <div class="d-flex flex-wrap listWrap">
+              <div v-for="data in getNews" v-bind:key="data.title" class="newsItem col-md-6 col-12">
+                <div
+                  v-on:click="addToChipsList(data)"
+                  class="newsContent d-flex jsutify-content-center align-items-center"
+                >{{data.title}}</div>
               </div>
             </div>
+            <!-- /List -->
           </div>
         </div>
       </b-navbar>
@@ -76,8 +77,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='france'}"
-          @click="currentFilter = 'franceN'"
-        >
+          @click="currentFilter = 'franceN'">
           <i class="far fa-circle" v-if="currentFilter!='france'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='france'"></i>
           <h6>France</h6>
@@ -85,7 +85,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='departement'}"
-          @click="currentFilter = 'departementN'"
+          @click="currentFilter = 'departement'"
         >
           <i class="far fa-circle" v-if="currentFilter!='departement'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='departement'"></i>
@@ -97,7 +97,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='commune'}"
-          @click="currentFilter = 'communeN'"
+          @click="currentFilter = 'commune'"
         >
           <i class="far fa-circle" v-if="currentFilter!='commune'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='commune'"></i>
@@ -105,11 +105,11 @@
         </div>
       </div>
     </div>
-    <div
-      class="getPosition d-flex justify-content-center align-items-center"
-    >
-    <i class="fas fa-map-marker-alt"></i>
-    </div>
+      <!-- <div
+        class="getPosition d-flex justify-content-center align-items-center"
+      >
+        <i class="fas fa-map-marker-alt"></i>
+      </div> -->
   </div>
 </template>
 
@@ -117,35 +117,50 @@
  
 
 <script>
+import json from "../assets/json/news.json";
 export default {
   name: "SearchBar",
 
   data() {
     return {
       wrapperExp: false,
-      openSideNav: true,
+      currentFilter: "commune",
+      inputSearchFocus: false,
+      chipsList: [],
+      filter: "",
+      news: json
     };
   },
-  computed: {
-    currentFilter: {
-      get () {
-        return this.$store.state.currentFilter
-      },
-      set (newV) {
-        this.$store.state.currentFilter = newV
-      }
-    }
-  },
   watch: {
-    openSideNav: function() {
-      this.$emit("sideNavState", this.openSideNav);
+    currentFilter: function() {
+      this.$emit("filterData", this.currentFilter);
     }
   },
-  mounted() {},
+
   created() {},
   methods: {
-    toggleNav() {
-      this.openSideNav = !this.openSideNav;
+    //Ajoute une news au filtres (chips)
+    addToChipsList(data) {
+      this.chipsList.push(data);
+    },
+    //On click icone croix -> chercher l'object et le retire de la list des chips
+    removeToChipsList(data) {
+      this.chipsList.splice(
+        this.chipsList
+          .map(function(e) {
+            return e.title;
+          })
+          .indexOf(data.title),
+        1
+      );
+    }
+  },
+  computed: {
+    getNews() {
+      var news = this.news.filter(player => {
+        return player.title.toLowerCase().includes(this.filter.toLowerCase());
+      });
+      return news;
     }
   }
 };
@@ -153,72 +168,60 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-/* =============================
-            SIDEBAR
- ============================= */
-aside {
-  display: block;
-  min-width: 250px;
-  max-width: 250px;
-  background: #fff;
-  color: #798186c2;
-  transition: all 0.3s;
-  height: 100vh;
+:focus {
+  outline: none;
+}
+.effect-8,
+.effect-9 {
+  border: 1px solid #ccc;
+  padding: 7px 14px 9px;
+  transition: 0.4s;
+}
+
+.effect-8 ~ .focus-border:before,
+.effect-8 ~ .focus-border:after {
+  content: "";
   position: absolute;
-  z-index: 999;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #999fa3;
+  border-radius: 10px;
+  transition: 0.3s;
 }
-aside.clodedSideNav {
-  margin-left: -260px;
+.effect-8 ~ .focus-border:after {
+  top: auto;
+  bottom: 0;
+  left: auto;
+  right: 0;
 }
-
-/*Title ( Polytweet)*/
-aside li.title-link {
-  height: 95px !important;
-  /*  margin-left: 15px;
-  margin-right: 10px;
-  margin-bottom: 10px; */
-  justify-content: center;
-  padding-left: 0px !important;
+.effect-8 ~ .focus-border i:before,
+.effect-8 ~ .focus-border i:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 0;
+  background-color: #999fa3;
+  transition: 0.4s;
 }
-aside li.title-link a {
-  text-decoration: none;
-  color: #6892fc;
-  font-family: "Airbnb Cereal App Black";
-  font-size: 24px;
-  /*  margin-left: -15px; */
+.effect-8 ~ .focus-border i:after {
+  left: auto;
+  right: 0;
+  top: auto;
+  bottom: 0;
 }
-
-/*Other Links*/
-.asideLink {
-  height: 50px;
-  padding-left: 15%;
-  cursor: pointer;
+.effect-8:focus ~ .focus-border:before,
+.effect-8:focus ~ .focus-border:after {
+  width: 100%;
+  transition: 0.3s;
 }
-.asideLink i {
-  font-size: 20px;
-  color: #798186c2;
-}
-.asideLink.border-bottom {
-  border-bottom: 1px solid #e8eaed;
-}
-.asideLink:not(.title-link):hover {
-  background-color: #e8eaed;
-}
-
-/*Overlay*/
-.overlay {
-  display: none;
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 997;
-  opacity: 0;
-  transition: all 0.5s ease-in-out;
-}
-.overlay.active {
-  display: block;
-  opacity: 1;
+.effect-8:focus ~ .focus-border i:before,
+.effect-8:focus ~ .focus-border i:after {
+  height: 100%;
+  transition: 0.4s;
 }
 
 /* =============================
@@ -234,12 +237,14 @@ aside li.title-link a {
   position: absolute;
   top: 3%;
   z-index: 510;
-  border-radius: 25em;
+  border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 1.25rem 1.562rem -1.25rem rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1.25rem 1.562rem -1.25rem rgba(0, 0, 0, 0.2);
   border: 1px solid #eaf1f3;
   background-color: #fff !important;
   padding: 0.75rem 1rem;
+  /*New*/
+  flex-wrap: wrap;
 }
 
 /*Button who open the sidenav*/
@@ -260,11 +265,11 @@ aside li.title-link a {
   margin-right: 8px;
   font-size: 1em;
   font-weight: bold;
-  border-bottom: #798186c2 solid 2px;
+  border-bottom: none;
   transition: 0.3s;
 }
 .inputSearchbar::placeholder {
-  color: #798186c2;
+  color: #2c3e50;
   font-size: 1em;
   font-weight: bold;
 }
@@ -281,6 +286,58 @@ aside li.title-link a {
   font-size: 1.25em;
 }
 
+/* News part */
+.info-part {
+  height: 0px;
+  overflow: hidden;
+  -moz-transition: height 0.5s;
+  -ms-transition: height 0.5s;
+  -o-transition: height 0.5s;
+  -webkit-transition: height 0.5s;
+  transition: height 0.5s;
+}
+.searchExpand {
+  height: 65vh;
+  -moz-transition: height 0.5s;
+  -ms-transition: height 0.5s;
+  -o-transition: height 0.5s;
+  -webkit-transition: height 0.5s;
+  transition: height 0.5s;
+}
+
+/*Chips*/
+.chip {
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  height: auto;
+  width: 100%;
+  border: 2px solid rgba(51, 51, 51, 0.46);
+  color: rgba(51, 51, 51, 0.46);
+  -ms-flex-align: center;
+  align-items: center;
+  justify-content: space-between;
+  display: inline-flex;
+  line-height: 20px;
+  padding: 0 12px;
+}
+
+/* News List */
+.listWrap {
+  max-height: 52vh;
+  overflow: scroll;
+}
+.newsItem {
+  padding: 5px;
+}
+.newsContent {
+  color: rgba(51, 51, 51);
+  border: 1.5px solid rgba(51, 51, 51);
+  font-weight: 500;
+  height: 75px;
+  border-radius: 5px;
+  padding: 5px;
+}
 /* =============================
            FILTRES
  ============================= */
@@ -359,6 +416,10 @@ aside li.title-link a {
   .filterSideNav h6 {
     word-break: break-word;
     font-size: 0.6rem;
+  }
+  /* News List*/
+  .newsContent {
+    height: 125px;
   }
 }
 </style>

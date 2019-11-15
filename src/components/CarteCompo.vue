@@ -142,11 +142,11 @@ export default {
           break;
       }
     })
-    window.addEventListener('load', () => {
-      document.getElementsByClassName('getPosition')[0].addEventListener('click', () => {
-        this.getCurrentLocation()
-      })
-    })
+    // window.addEventListener('load', () => {
+    //   document.getElementsByClassName('getPosition')[0].addEventListener('click', () => {
+    //     this.getCurrentLocation()
+    //   })
+    // })
   },
   methods: {
     zoomUpdated(zoom) {
