@@ -6,10 +6,13 @@
         toggleable="sm"
         type="light"
         variant="light"
-        class="col-lg-6 col-md-9 col-10 searchNav"
+        class="col-lg-6 col-md-9 col-11 searchNav"
       >
         <div class="row align-items-center w-100 col-12">
-          <a href="/" class="sidebarButton col-3 col-md-2 col-lg-1 d-flex align-items-center">
+          <a
+            href="/"
+            class="sidebarButton col-2 col-md-2 col-lg-1 d-flex align-items-center justify-content-center"
+          >
             <img alt="Vue logo" src="../assets/logo.png" width="40" />
           </a>
           <div class="col-lg-11 col-10 d-flex align-items-center inputContainer">
@@ -52,11 +55,13 @@
             </div>
             <!-- List -->
             <div class="d-flex flex-wrap listWrap">
-              <div v-for="data in getNews" v-bind:key="data.title" class="newsItem col-md-6 col-12">
-                <div
+              <div v-for="data in getNews" v-bind:key="data._id" class="newsItem col-md-6 col-12">
+                <button
+                  :disabled="data.chipsSelected==true"
+                  v-bind:class="{ chipSelected: data.chipsSelected==true }"
                   v-on:click="addToChipsList(data)"
                   class="newsContent d-flex jsutify-content-center align-items-center"
-                >{{data.title}}</div>
+                >{{data.title}}</button>
               </div>
             </div>
             <!-- /List -->
@@ -77,7 +82,8 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='france'}"
-          @click="currentFilter = 'franceN'">
+          @click="currentFilter = 'franceN'"
+        >
           <i class="far fa-circle" v-if="currentFilter!='france'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='france'"></i>
           <h6>France</h6>
@@ -105,11 +111,9 @@
         </div>
       </div>
     </div>
-      <!-- <div
-        class="getPosition d-flex justify-content-center align-items-center"
-      >
-        <i class="fas fa-map-marker-alt"></i>
-      </div> -->
+    <div class="getPosition d-flex justify-content-center align-items-center">
+      <i class="fas fa-map-marker-alt"></i>
+    </div>
   </div>
 </template>
 
@@ -118,6 +122,8 @@
 
 <script>
 import json from "../assets/json/news.json";
+import gql from "graphql-tag";
+
 export default {
   name: "SearchBar",
 
@@ -137,14 +143,22 @@ export default {
     }
   },
 
-  created() {},
+  created() {
+    this.getDataFromNews();
+  },
   methods: {
     //Ajoute une news au filtres (chips)
     addToChipsList(data) {
       this.chipsList.push(data);
+      this.news[this.news.findIndex(x => x._id === data._id)][
+        "chipsSelected"
+      ] = true;
     },
     //On click icone croix -> chercher l'object et le retire de la list des chips
     removeToChipsList(data) {
+      this.news[this.news.findIndex(x => x._id === data._id)][
+        "chipsSelected"
+      ] = false;
       this.chipsList.splice(
         this.chipsList
           .map(function(e) {
@@ -153,6 +167,21 @@ export default {
           .indexOf(data.title),
         1
       );
+    },
+    async getDataFromNews() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            news {
+              _id
+              title
+              url
+            }
+          }
+        `
+      });
+      console.log(resApollo);
+      this.news = resApollo.data.news;
     }
   },
   computed: {
@@ -321,6 +350,11 @@ export default {
   line-height: 20px;
   padding: 0 12px;
 }
+.chipSelected {
+  background-color: rgb(51, 51, 51, 0.46);
+  color: white;
+  cursor: not-allowed;
+}
 
 /* News List */
 .listWrap {
@@ -341,6 +375,19 @@ export default {
 /* =============================
            FILTRES
  ============================= */
+.getPosition {
+  background: #fff;
+  width: 66px;
+  height: 66px;
+  border-radius: 25em !important;
+  position: absolute;
+  right: 1%;
+  bottom: 3%;
+  z-index: 509;
+  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
 .filterSideNav {
   background: #fff;
   width: 66px;
@@ -350,7 +397,7 @@ export default {
   position: absolute;
   right: 1%;
   top: 3%;
-  z-index: 510;
+  z-index: 509;
   box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
     0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
   max-height: 72px;
@@ -378,7 +425,8 @@ export default {
   word-break: break-word;
   font-size: 0.75rem;
 }
-.filterSideNav i {
+.filterSideNav i,
+.getPosition i {
   font-size: 22px;
   color: #798186c2;
 }
@@ -407,11 +455,15 @@ export default {
   }
   .filterSideNav {
     width: 50px;
-    top: 15%;
+    top: 24%;
   }
-  .filterItemContainer {
+  .filterItemContainer,
+  .getPosition {
     width: 50px;
     height: 50px;
+  }
+  .getPosition {
+    top: 15%;
   }
   .filterSideNav h6 {
     word-break: break-word;
