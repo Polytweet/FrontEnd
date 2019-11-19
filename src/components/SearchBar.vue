@@ -60,7 +60,7 @@
                   :disabled="data.chipsSelected==true"
                   v-bind:class="{ chipSelected: data.chipsSelected==true }"
                   v-on:click="addToChipsList(data)"
-                  class="newsContent d-flex jsutify-content-center align-items-center"
+                  class="newsContent d-flex justify-content-center align-items-center"
                 >{{data.title}}</button>
               </div>
             </div>
@@ -112,7 +112,7 @@
       </div>
     </div>
     <div class="getPosition d-flex justify-content-center align-items-center">
-      <i class="fas fa-map-marker-alt"></i>
+      <i class="fas fa-map"></i>
     </div>
   </div>
 </template>
@@ -350,27 +350,30 @@ export default {
   line-height: 20px;
   padding: 0 12px;
 }
-.chipSelected {
-  background-color: rgb(51, 51, 51, 0.46);
-  color: white;
-  cursor: not-allowed;
-}
 
 /* News List */
 .listWrap {
-  max-height: 52vh;
+  max-height: 55vh;
   overflow: scroll;
+  overflow-x: unset;
 }
 .newsItem {
   padding: 5px;
 }
 .newsContent {
+  background-color: #fff;
   color: rgba(51, 51, 51);
   border: 1.5px solid rgba(51, 51, 51);
   font-weight: 500;
-  height: 75px;
+  height: 100px;
   border-radius: 5px;
-  padding: 5px;
+  padding: 10px 5px;
+  width: 100%;
+}
+.chipSelected {
+  background-color: rgb(51, 51, 51, 0.46);
+  color: white;
+  cursor: not-allowed;
 }
 /* =============================
            FILTRES
@@ -381,8 +384,8 @@ export default {
   height: 66px;
   border-radius: 25em !important;
   position: absolute;
-  right: 1%;
-  bottom: 3%;
+  right: 6%;
+  top: 3%;
   z-index: 509;
   box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
     0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
@@ -464,6 +467,7 @@ export default {
   }
   .getPosition {
     top: 15%;
+    right: 1%;
   }
   .filterSideNav h6 {
     word-break: break-word;
