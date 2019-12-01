@@ -16,17 +16,23 @@
             <img alt="Vue logo" src="../assets/logo.png" width="40" />
           </a>
           <div class="col-lg-11 col-10 d-flex align-items-center inputContainer">
-            <input
+            <!-- <input
               id="searchBar"
               class="inputSearchbar w-100 effect-8"
               type="text"
               placeholder="Choisissez une actualité"
               @focus="inputSearchFocus = true"
               v-model="filter"
+            />-->
+            <input
+              id="searchBar"
+              class="inputSearchbar effect-focus-input w-100"
+              type="text"
+              placeholder="Choisissez une actualité"
+              @focus="inputSearchFocus = true"
+              v-model="filter"
             />
-            <span class="focus-border">
-              <i></i>
-            </span>
+            <span class="focus-bg"></span>
           </div>
         </div>
         <!-- News Part -->
@@ -37,7 +43,7 @@
             <div class="d-flex flex-wrap w-100">
               <!-- Chips -->
               <div class="chip mt-1" v-for="chips in chipsList" v-bind:key="chips.title">
-                <span class="text-left">{{chips.title}}</span>
+                <span class="mx-auto">{{chips.title.split(' ').slice(0,2).join(' ')}}</span>
                 <i
                   class="fas fa-times-circle ml-1 float-right text-right"
                   v-on:click="removeToChipsList(chips)"
@@ -51,19 +57,24 @@
           <div class="newsList mt-4">
             <div class="d-flex justify-content-between">
               <h6 class="mr-3 text-left">News</h6>
+              <h6 v-on:click="exportData(getNews,filter)">Export</h6>
               <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
             </div>
             <!-- List -->
-            <div class="d-flex flex-wrap listWrap">
-              <div v-for="data in getNews" v-bind:key="data._id" class="newsItem col-md-6 col-12">
-                <button
-                  :disabled="data.chipsSelected==true"
-                  v-bind:class="{ chipSelected: data.chipsSelected==true }"
-                  v-on:click="addToChipsList(data)"
-                  class="newsContent d-flex justify-content-center align-items-center"
-                >{{data.title}}</button>
-              </div>
-            </div>
+
+            <table class="d-flex listWrap table table-striped">
+              <tbody>
+                <tr v-for="data in getNews" v-bind:key="data._id">
+                  <td
+                    :disabled="data.chipsSelected==true"
+                    v-bind:class="{ chipSelected: data.chipsSelected==true }"
+                    v-on:click="addToChipsList(data)"
+                    class="newsContent d-flex justify-content-center align-items-center"
+                  >{{data.title}}</td>
+                </tr>
+              </tbody>
+            </table>
+
             <!-- /List -->
           </div>
         </div>
@@ -149,10 +160,12 @@ export default {
   methods: {
     //Ajoute une news au filtres (chips)
     addToChipsList(data) {
-      this.chipsList.push(data);
-      this.news[this.news.findIndex(x => x._id === data._id)][
-        "chipsSelected"
-      ] = true;
+      if (data.chipsSelected != true) {
+        this.chipsList.push(data);
+        this.news[this.news.findIndex(x => x._id === data._id)][
+          "chipsSelected"
+        ] = true;
+      }
     },
     //On click icone croix -> chercher l'object et le retire de la list des chips
     removeToChipsList(data) {
@@ -182,6 +195,41 @@ export default {
       });
       console.log(resApollo);
       this.news = resApollo.data.news;
+    },
+
+    /*Pour TensorFlow JS*/
+    exportData(data, filter) {
+      let result = [];
+      data.forEach(e => {
+        let indent = e.title.toLowerCase().includes(filter) ? filter : "none";
+        result.push({ text: e.title, indent: indent });
+      });
+
+      const dataJson = JSON.stringify(result);
+      const blob = new Blob([dataJson], { type: "text/plain" });
+      const e = document.createEvent("MouseEvents"),
+        a = document.createElement("a");
+      a.download = "comment-giletJaune-training.json";
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ["text/json", a.download, a.href].join(":");
+      e.initEvent(
+        "click",
+        true,
+        false,
+        window,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        0,
+        null
+      );
+      a.dispatchEvent(e);
     }
   },
   computed: {
@@ -197,60 +245,30 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.effect-focus-input ~ .focus-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ededed;
+  opacity: 0;
+  transition: 0.5s;
+  z-index: -1;
+}
+.effect-focus-input:focus ~ .focus-bg {
+  transition: 0.5s;
+  opacity: 1;
+}
+.effect-focus-input {
+  border: 0;
+  padding: 7px 15px;
+  border: 1px solid #ccc;
+  position: relative;
+  background: transparent;
+}
 :focus {
   outline: none;
-}
-.effect-8,
-.effect-9 {
-  border: 1px solid #ccc;
-  padding: 7px 14px 9px;
-  transition: 0.4s;
-}
-
-.effect-8 ~ .focus-border:before,
-.effect-8 ~ .focus-border:after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background-color: #999fa3;
-  border-radius: 10px;
-  transition: 0.3s;
-}
-.effect-8 ~ .focus-border:after {
-  top: auto;
-  bottom: 0;
-  left: auto;
-  right: 0;
-}
-.effect-8 ~ .focus-border i:before,
-.effect-8 ~ .focus-border i:after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 2px;
-  height: 0;
-  background-color: #999fa3;
-  transition: 0.4s;
-}
-.effect-8 ~ .focus-border i:after {
-  left: auto;
-  right: 0;
-  top: auto;
-  bottom: 0;
-}
-.effect-8:focus ~ .focus-border:before,
-.effect-8:focus ~ .focus-border:after {
-  width: 100%;
-  transition: 0.3s;
-}
-.effect-8:focus ~ .focus-border i:before,
-.effect-8:focus ~ .focus-border i:after {
-  height: 100%;
-  transition: 0.4s;
 }
 
 /* =============================
@@ -340,7 +358,8 @@ export default {
   font-size: 14px;
   font-weight: 600;
   height: auto;
-  width: 100%;
+  width: 175px;
+  text-align: center;
   border: 2px solid rgba(51, 51, 51, 0.46);
   color: rgba(51, 51, 51, 0.46);
   -ms-flex-align: center;
@@ -350,6 +369,13 @@ export default {
   line-height: 20px;
   padding: 0 12px;
 }
+.chip .text-left {
+  height: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
 
 /* News List */
 .listWrap {
@@ -357,24 +383,18 @@ export default {
   overflow: scroll;
   overflow-x: unset;
 }
-.newsItem {
-  padding: 5px;
-}
 .newsContent {
-  background-color: #fff;
   color: rgba(51, 51, 51);
-  border: 1.5px solid rgba(51, 51, 51);
+  border: none;
   font-weight: 500;
-  height: 100px;
-  border-radius: 5px;
-  padding: 10px 5px;
-  width: 100%;
+  height: 90px;
 }
 .chipSelected {
-  background-color: rgb(51, 51, 51, 0.46);
+  background-color: #6892fc;
   color: white;
   cursor: not-allowed;
 }
+
 /* =============================
            FILTRES
  ============================= */
