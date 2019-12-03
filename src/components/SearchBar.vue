@@ -57,8 +57,7 @@
           <div class="newsList mt-4">
             <div class="d-flex justify-content-between">
               <h6 class="mr-3 text-left">News</h6>
-              <h6 v-on:click="exportData(getNews,filter)">Export</h6>
-              <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
+               <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
             </div>
             <!-- List -->
 
@@ -123,7 +122,7 @@
       </div>
     </div>
     <div class="getPosition d-flex justify-content-center align-items-center">
-      <i class="fas fa-map"></i>
+  <i class="fas fa-map-marker-alt"></i>
     </div>
   </div>
 </template>
@@ -141,19 +140,12 @@ export default {
   data() {
     return {
       wrapperExp: false,
-      currentFilter: "commune",
       inputSearchFocus: false,
       chipsList: [],
       filter: "",
       news: json
     };
   },
-  watch: {
-    currentFilter: function() {
-      this.$emit("filterData", this.currentFilter);
-    }
-  },
-
   created() {
     this.getDataFromNews();
   },
@@ -193,46 +185,18 @@ export default {
           }
         `
       });
-      console.log(resApollo);
       this.news = resApollo.data.news;
     },
-
-    /*Pour TensorFlow JS*/
-    exportData(data, filter) {
-      let result = [];
-      data.forEach(e => {
-        let indent = e.title.toLowerCase().includes(filter) ? filter : "none";
-        result.push({ text: e.title, indent: indent });
-      });
-
-      const dataJson = JSON.stringify(result);
-      const blob = new Blob([dataJson], { type: "text/plain" });
-      const e = document.createEvent("MouseEvents"),
-        a = document.createElement("a");
-      a.download = "comment-giletJaune-training.json";
-      a.href = window.URL.createObjectURL(blob);
-      a.dataset.downloadurl = ["text/json", a.download, a.href].join(":");
-      e.initEvent(
-        "click",
-        true,
-        false,
-        window,
-        0,
-        0,
-        0,
-        0,
-        0,
-        false,
-        false,
-        false,
-        false,
-        0,
-        null
-      );
-      a.dispatchEvent(e);
-    }
   },
   computed: {
+     currentFilter: {
+      get () {
+        return this.$store.state.currentFilter
+      },
+      set (newV) {
+        this.$store.state.currentFilter = newV
+      }
+    },
     getNews() {
       var news = this.news.filter(player => {
         return player.title.toLowerCase().includes(this.filter.toLowerCase());
