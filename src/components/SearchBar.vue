@@ -1,64 +1,81 @@
 <template>
   <div>
-    <!-- Sidebar -->
-    <aside :class="{ clodedSideNav: openSideNav}">
-      <ul class="list-unstyled components">
-        <li class="asideLink d-flex align-items-center border-bottom title-link">
-          <a href="/">Polytweet</a>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-list-alt"></i>
-          <span class="ml-4">Fuck</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-compass"></i>
-          <span class="ml-4">Le</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-map"></i>
-          <span class="ml-4">C</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="fas fa-chart-line"></i>
-          <span class="ml-4">S</span>
-        </li>
-        <li class="asideLink d-flex align-items-center">
-          <i class="far fa-heart"></i>
-          <span class="ml-4">S</span>
-        </li>
-      </ul>
-    </aside>
-
-    <!-- Overlay -->
-    <div class="overlay" :class="{ active: !openSideNav}" @click="openSideNav = !openSideNav"></div>
-
     <!-- Search Nav -->
-    <div class="searchNavContainer mx-auto">
+    <div class="searchNavContainer mx-auto" @mouseleave="inputSearchFocus = false">
       <b-navbar
         toggleable="sm"
         type="light"
         variant="light"
-        class="col-lg-6 col-md-9 col-10 searchNav"
+        class="col-lg-6 col-md-9 col-11 searchNav"
       >
-        <div class="row align-items-center w-100">
-          <div
-            class="sidebarButton col-3 col-md-2 justify-content-center d-flex align-items-center"
-            @click="toggleNav()"
+        <div class="row align-items-center w-100 col-12">
+          <a
+            href="/"
+            class="sidebarButton col-2 col-md-2 col-lg-1 d-flex align-items-center justify-content-center"
           >
-            <i class="fas fa-bars"></i>
-          </div>
-          <div class="col-9 col-md-10 d-flex align-items-center inputContainer">
+            <img alt="Vue logo" src="../assets/logo.png" width="40" />
+          </a>
+          <div class="col-lg-11 col-10 d-flex align-items-center inputContainer">
+            <!-- <input
+              id="searchBar"
+              class="inputSearchbar w-100 effect-8"
+              type="text"
+              placeholder="Choisissez une actualité"
+              @focus="inputSearchFocus = true"
+              v-model="filter"
+            />-->
             <input
               id="searchBar"
-              class="inputSearchbar w-100"
+              class="inputSearchbar effect-focus-input w-100"
               type="text"
-              placeholder="Entrez votre recherche"
+              placeholder="Choisissez une actualité"
+              @focus="inputSearchFocus = true"
+              v-model="filter"
             />
-            <div class="col-2 col-md-1">
-              <div class="circle d-flex align-items-center justify-content-center">
-                <i class="fas fa-search btn-search mx-2"></i>
+            <span class="focus-bg"></span>
+          </div>
+        </div>
+        <!-- News Part -->
+        <div class="col-12 info-part" v-bind:class="{ searchExpand: inputSearchFocus }">
+          <br />
+          <!-- NewsSelected -->
+          <div class="newsFilter d-flex align-items-start">
+            <div class="d-flex flex-wrap w-100">
+              <!-- Chips -->
+              <div class="chip mt-1" v-for="chips in chipsList" v-bind:key="chips.title">
+                <span class="mx-auto">{{chips.title.split(' ').slice(0,2).join(' ')}}</span>
+                <i
+                  class="fas fa-times-circle ml-1 float-right text-right"
+                  v-on:click="removeToChipsList(chips)"
+                ></i>
               </div>
+              <!-- /Chips -->
             </div>
+          </div>
+
+          <!-- List Header -->
+          <div class="newsList mt-4">
+            <div class="d-flex justify-content-between">
+              <h6 class="mr-3 text-left">News</h6>
+              <h6 v-on:click="exportData(getNews,filter)">Export</h6>
+              <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
+            </div>
+            <!-- List -->
+
+            <table class="d-flex listWrap table table-striped">
+              <tbody>
+                <tr v-for="data in getNews" v-bind:key="data._id">
+                  <td
+                    :disabled="data.chipsSelected==true"
+                    v-bind:class="{ chipSelected: data.chipsSelected==true }"
+                    v-on:click="addToChipsList(data)"
+                    class="newsContent d-flex justify-content-center align-items-center"
+                  >{{data.title}}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- /List -->
           </div>
         </div>
       </b-navbar>
@@ -85,7 +102,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='departement'}"
-          @click="currentFilter = 'departementN'"
+          @click="currentFilter = 'departement'"
         >
           <i class="far fa-circle" v-if="currentFilter!='departement'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='departement'"></i>
@@ -97,7 +114,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='commune'}"
-          @click="currentFilter = 'communeN'"
+          @click="currentFilter = 'commune'"
         >
           <i class="far fa-circle" v-if="currentFilter!='commune'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='commune'"></i>
@@ -105,10 +122,8 @@
         </div>
       </div>
     </div>
-    <div
-      class="getPosition d-flex justify-content-center align-items-center"
-    >
-    <i class="fas fa-map-marker-alt"></i>
+    <div class="getPosition d-flex justify-content-center align-items-center">
+      <i class="fas fa-map"></i>
     </div>
   </div>
 </template>
@@ -117,35 +132,107 @@
  
 
 <script>
+import json from "../assets/json/news.json";
+import gql from "graphql-tag";
 export default {
   name: "SearchBar",
-
   data() {
     return {
       wrapperExp: false,
-      openSideNav: true,
+      currentFilter: "commune",
+      inputSearchFocus: false,
+      chipsList: [],
+      filter: "",
+      news: json
     };
   },
-  computed: {
-    currentFilter: {
-      get () {
-        return this.$store.state.currentFilter
-      },
-      set (newV) {
-        this.$store.state.currentFilter = newV
-      }
-    }
-  },
   watch: {
-    openSideNav: function() {
-      this.$emit("sideNavState", this.openSideNav);
+    currentFilter: function() {
+      this.$emit("filterData", this.currentFilter);
     }
   },
-  mounted() {},
-  created() {},
+  created() {
+    this.getDataFromNews();
+  },
   methods: {
-    toggleNav() {
-      this.openSideNav = !this.openSideNav;
+    //Ajoute une news au filtres (chips)
+    addToChipsList(data) {
+      if (data.chipsSelected != true) {
+        this.chipsList.push(data);
+        this.news[this.news.findIndex(x => x._id === data._id)][
+          "chipsSelected"
+        ] = true;
+      }
+    },
+    //On click icone croix -> chercher l'object et le retire de la list des chips
+    removeToChipsList(data) {
+      this.news[this.news.findIndex(x => x._id === data._id)][
+        "chipsSelected"
+      ] = false;
+      this.chipsList.splice(
+        this.chipsList
+          .map(function(e) {
+            return e.title;
+          })
+          .indexOf(data.title),
+        1
+      );
+    },
+    async getDataFromNews() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            news {
+              _id
+              title
+              url
+            }
+          }
+        `
+      });
+      console.log(resApollo);
+      this.news = resApollo.data.news;
+    },
+    /*Pour TensorFlow JS*/
+    exportData(data, filter) {
+      let result = [];
+      data.forEach(e => {
+        let indent = e.title.toLowerCase().includes(filter) ? filter : "none";
+        result.push({ text: e.title, indent: indent });
+      });
+      const dataJson = JSON.stringify(result);
+      const blob = new Blob([dataJson], { type: "text/plain" });
+      const e = document.createEvent("MouseEvents"),
+        a = document.createElement("a");
+      a.download = "comment-giletJaune-training.json";
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ["text/json", a.download, a.href].join(":");
+      e.initEvent(
+        "click",
+        true,
+        false,
+        window,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        0,
+        null
+      );
+      a.dispatchEvent(e);
+    }
+  },
+  computed: {
+    getNews() {
+      var news = this.news.filter(player => {
+        return player.title.toLowerCase().includes(this.filter.toLowerCase());
+      });
+      return news;
     }
   }
 };
@@ -153,74 +240,31 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-/* =============================
-            SIDEBAR
- ============================= */
-aside {
-  display: block;
-  min-width: 250px;
-  max-width: 250px;
-  background: #fff;
-  color: #798186c2;
-  transition: all 0.3s;
-  height: 100vh;
+.effect-focus-input ~ .focus-bg {
   position: absolute;
-  z-index: 999;
-}
-aside.clodedSideNav {
-  margin-left: -260px;
-}
-
-/*Title ( Polytweet)*/
-aside li.title-link {
-  height: 95px !important;
-  /*  margin-left: 15px;
-  margin-right: 10px;
-  margin-bottom: 10px; */
-  justify-content: center;
-  padding-left: 0px !important;
-}
-aside li.title-link a {
-  text-decoration: none;
-  color: #6892fc;
-  font-family: "Airbnb Cereal App Black";
-  font-size: 24px;
-  /*  margin-left: -15px; */
-}
-
-/*Other Links*/
-.asideLink {
-  height: 50px;
-  padding-left: 15%;
-  cursor: pointer;
-}
-.asideLink i {
-  font-size: 20px;
-  color: #798186c2;
-}
-.asideLink.border-bottom {
-  border-bottom: 1px solid #e8eaed;
-}
-.asideLink:not(.title-link):hover {
-  background-color: #e8eaed;
-}
-
-/*Overlay*/
-.overlay {
-  display: none;
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 997;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ededed;
   opacity: 0;
-  transition: all 0.5s ease-in-out;
+  transition: 0.5s;
+  z-index: -1;
 }
-.overlay.active {
-  display: block;
+.effect-focus-input:focus ~ .focus-bg {
+  transition: 0.5s;
   opacity: 1;
 }
-
+.effect-focus-input {
+  border: 0;
+  padding: 7px 15px;
+  border: 1px solid #ccc;
+  position: relative;
+  background: transparent;
+}
+:focus {
+  outline: none;
+}
 /* =============================
            SEARCH NAV
  ============================= */
@@ -234,21 +278,21 @@ aside li.title-link a {
   position: absolute;
   top: 3%;
   z-index: 510;
-  border-radius: 25em;
+  border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 1.25rem 1.562rem -1.25rem rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1.25rem 1.562rem -1.25rem rgba(0, 0, 0, 0.2);
   border: 1px solid #eaf1f3;
   background-color: #fff !important;
   padding: 0.75rem 1rem;
+  /*New*/
+  flex-wrap: wrap;
 }
-
 /*Button who open the sidenav*/
 .sidebarButton i {
   font-size: 24px;
   padding: 7px 10px;
   color: #798186c2;
 }
-
 /*Input of searchNav*/
 .inputSearchbar {
   float: right;
@@ -260,15 +304,14 @@ aside li.title-link a {
   margin-right: 8px;
   font-size: 1em;
   font-weight: bold;
-  border-bottom: #798186c2 solid 2px;
+  border-bottom: none;
   transition: 0.3s;
 }
 .inputSearchbar::placeholder {
-  color: #798186c2;
+  color: #2c3e50;
   font-size: 1em;
   font-weight: bold;
 }
-
 /*Button validate search*/
 .circle {
   width: 40px;
@@ -280,10 +323,81 @@ aside li.title-link a {
   color: #fff;
   font-size: 1.25em;
 }
-
+/* News part */
+.info-part {
+  height: 0px;
+  overflow: hidden;
+  -moz-transition: height 0.5s;
+  -ms-transition: height 0.5s;
+  -o-transition: height 0.5s;
+  -webkit-transition: height 0.5s;
+  transition: height 0.5s;
+}
+.searchExpand {
+  height: 65vh;
+  -moz-transition: height 0.5s;
+  -ms-transition: height 0.5s;
+  -o-transition: height 0.5s;
+  -webkit-transition: height 0.5s;
+  transition: height 0.5s;
+}
+/*Chips*/
+.chip {
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  height: auto;
+  width: 175px;
+  text-align: center;
+  border: 2px solid rgba(51, 51, 51, 0.46);
+  color: rgba(51, 51, 51, 0.46);
+  -ms-flex-align: center;
+  align-items: center;
+  justify-content: space-between;
+  display: inline-flex;
+  line-height: 20px;
+  padding: 0 12px;
+}
+.chip .text-left {
+  height: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+/* News List */
+.listWrap {
+  max-height: 55vh;
+  overflow: scroll;
+  overflow-x: unset;
+}
+.newsContent {
+  color: rgba(51, 51, 51);
+  border: none;
+  font-weight: 500;
+  height: 90px;
+}
+.chipSelected {
+  background-color: #6892fc;
+  color: white;
+  cursor: not-allowed;
+}
 /* =============================
            FILTRES
  ============================= */
+.getPosition {
+  background: #fff;
+  width: 66px;
+  height: 66px;
+  border-radius: 25em !important;
+  position: absolute;
+  right: 6%;
+  top: 3%;
+  z-index: 509;
+  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
 .filterSideNav {
   background: #fff;
   width: 66px;
@@ -293,7 +407,7 @@ aside li.title-link a {
   position: absolute;
   right: 1%;
   top: 3%;
-  z-index: 510;
+  z-index: 509;
   box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
     0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
   max-height: 72px;
@@ -307,7 +421,6 @@ aside li.title-link a {
   max-height: 500px;
   transition: max-height 0.25s ease-in;
 }
-
 .filterSideNav .row {
   padding: 0px;
   border-top: 2px solid #798186c2;
@@ -316,16 +429,15 @@ aside li.title-link a {
   justify-content: center;
   height: 80px;
 }
-
 .filterSideNav h6 {
   word-break: break-word;
   font-size: 0.75rem;
 }
-.filterSideNav i {
+.filterSideNav i,
+.getPosition i {
   font-size: 22px;
   color: #798186c2;
 }
-
 .filterItemContainer {
   width: 66px;
   height: 66px;
@@ -338,7 +450,6 @@ aside li.title-link a {
 .filterSideNav .row.filterActive i {
   color: #6892fc;
 }
-
 /* =============================
            RESPONSIVE
  ============================= */
@@ -350,16 +461,24 @@ aside li.title-link a {
   }
   .filterSideNav {
     width: 50px;
-    top: 15%;
+    top: 24%;
   }
-  .filterItemContainer {
+  .filterItemContainer,
+  .getPosition {
     width: 50px;
     height: 50px;
+  }
+  .getPosition {
+    top: 15%;
+    right: 1%;
   }
   .filterSideNav h6 {
     word-break: break-word;
     font-size: 0.6rem;
   }
+  /* News List*/
+  .newsContent {
+    height: 125px;
+  }
 }
 </style>
-

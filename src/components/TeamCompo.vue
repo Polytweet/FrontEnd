@@ -1,4 +1,3 @@
-
 <template >
   <div>
     <div class="container">
@@ -108,9 +107,6 @@ h1::after {
   border: none;
   /*   box-shadow: 0 2px 6px 0 rgba(47, 83, 151, 0.1);
  */
-}
-.card:hover {
-  /* box-shadow: 0 0 20px 9px rgba(0, 0, 0, 0.03); */
 }
 img {
   width: 80px;
