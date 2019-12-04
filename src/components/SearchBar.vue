@@ -101,7 +101,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='departement'}"
-          @click="currentFilter = 'departement'"
+          @click="currentFilter = 'departementN'"
         >
           <i class="far fa-circle" v-if="currentFilter!='departement'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='departement'"></i>
@@ -113,7 +113,7 @@
         <div
           class="row"
           :class="{ filterActive: currentFilter=='commune'}"
-          @click="currentFilter = 'commune'"
+          @click="currentFilter = 'communeN'"
         >
           <i class="far fa-circle" v-if="currentFilter!='commune'"></i>
           <i class="far fa-check-circle" v-if="currentFilter=='commune'"></i>
