@@ -64,7 +64,9 @@
   src: local("assets/fonts/Airbnb Cereal App Black"),
     url("assets/fonts/AirbnbCerealBlack.woff") format("woff");
 }
-
+body {
+  overflow-x: hidden;
+}
 #app {
   font-family: "Airbnb Cereal App Book";
   -webkit-font-smoothing: antialiased;

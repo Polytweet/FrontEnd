@@ -24,8 +24,33 @@
         </div>
       </div>
     </div>
-    <div class="compteur">
-      <h1>{{dataCompteur}}</h1>
+
+    <div class="counter" @mouseenter="showCounter=true">
+      <!-- Affichage des Tweets -->
+      <div v-if="showTweet" class="full-height-width">
+        <div v-for="(item, i) in tweetTest" v-bind:key="i+item.hastag">
+          <div v-bind:style="item.placement" class="tweet" v-scroll-reveal>
+            <h6>{{ item.hastag + i }}</h6>
+            <span>{{item.text}}</span>
+          </div>
+        </div>
+      </div>
+      <!--/ Affichage des Tweets -->
+      <!-- Animation -->
+      <div class="d-flex flex-column counterAnim">
+        <h1 v-scroll-reveal>Déjà plus de</h1>
+        <animated-number
+          class="my-5"
+          v-if="showCounter"
+          :value="value"
+          :formatValue="formatToPrice"
+          :duration="1000"
+          :round="1"
+          v-scroll-reveal
+        />
+        <h1 v-scroll-reveal>tweets analysés</h1>
+      </div>
+      <!--/ Animation -->
     </div>
   </div>
   <!-- 
@@ -35,27 +60,178 @@
 </template>
 
 <script>
+import AnimatedNumber from "animated-number-vue";
+
 export default {
   name: "HomeCompo",
+  components: {
+    AnimatedNumber
+  },
   data() {
     return {
-      dataCompteur: 175302
+      value: 837739,
+      showCounter: false,
+      showTweet: false,
+      tweetTest: [
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        },
+        {
+          hastag: "#PolyTweet",
+          text: "attribute to limit CSS to this ",
+          placement: ""
+        }
+      ]
     };
   },
   props: {},
+
   methods: {
-    regenerateDataCompteur() {
-      console.log("regen");
+    formatToPrice(value) {
+      return `${value}`;
+    },
+    placeTweetOnScreen() {
+      let style = {
+        top: 10 + "%",
+        right: -5 + "%",
+        bottom: 0 + "%",
+        left: -5 + "%"
+      };
+      for (let i = 0; i < this.tweetTest.length; i++) {
+        this.tweetTest[i].placement = this.cssIncrementPosition(style, i);
+        let res = i % 12;
+
+        console.log(
+          res +
+            " - " +
+            i +
+            "   " +
+            "top = " +
+            this.tweetTest[i].placement.top +
+            " right = " +
+            this.tweetTest[i].placement.right +
+            "bottom = " +
+            this.tweetTest[i].placement.bottom +
+            " left = " +
+            this.tweetTest[i].placement.left
+        );
+      }
+      this.showTweet = true;
+    },
+    cssIncrementPosition(style, i) {
+      //Version modulo
+      let mod = i % 6;
+      console.log(mod);
+      //Traitement Horizontal
+      if (mod <= 3) {
+        //Partie du haut
+        if (i % 12 < 6) {
+          style.right = "0%";
+        } else {
+          //Partie du bas
+          if (i % 12 == 6) {
+            style.left = "-5%";
+            style.right = "0%";
+          }
+          style.top = "0%";
+          style.bottom = "10%";
+        }
+        style.left.replace("%", "");
+        style.left = parseInt(style.left) + 20 + "%";
+      }
+      //Traitement Vertical
+      else {
+        //Partie de droite
+        if (i % 12 < 6) {
+          if (i % 12 == 4) {
+            style.top = "10%";
+            style.left = "0%";
+            style.right = "10%";
+          }
+          style.top.replace("%", "");
+          style.top = parseInt(style.top) + 25 + "%";
+        } else {
+          //Partie de gauche
+          if (i % 12 == 10) {
+            style.top = "10%";
+            style.left = "10%";
+            style.bottom = "0%";
+          }
+          style.top.replace("%", "");
+          style.top = parseInt(style.top) + 25 + "%";
+        }
+      }
+
+      let newStyle = {
+        top: style.top == "0%" ? null : style.top,
+        right: style.right == "0%" ? null : style.right,
+        bottom: style.bottom == "0%" ? null : style.bottom,
+        left: style.left == "0%" ? null : style.left
+      };
+      return newStyle;
     }
   },
   watch: {
-    dataCompteur: () => {
-      var digits = ("" + this.dataCompteur).split("");
-      console.log(digits);
+    showCounter: {
+      handler: function(val, oldVal) {
+        console.log(val + " " + oldVal);
+        if (val && !oldVal) {
+          this.placeTweetOnScreen();
+        }
+      }
     }
-  },
-  mounted() {
-    this.regenerateDataCompteur();
   }
 };
 </script>
@@ -64,7 +240,8 @@ export default {
 <style scoped>
 /* Home */
 .home,
-.compteur {
+.counter,
+.full-height-width {
   height: 100vh;
   width: 100vw;
 }
@@ -90,6 +267,27 @@ export default {
   margin-left: 75px;
 }
 
+/* Compteur */
+.counter {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counterAnim span {
+  font-family: "Airbnb Cereal App Bold";
+  font-size: 200px;
+  font-weight: 800;
+}
+.full-height-width {
+  position: absolute;
+}
+/*Tweets placement*/
+.tweet {
+  position: absolute;
+}
+
 @media screen and (max-width: 1000px) {
   img.svgBackground {
     width: 155%;
@@ -100,13 +298,6 @@ export default {
   .textWrapper {
     margin-left: 15px;
   }
-}
-
-/* Compteur */
-.compteur {
-  background-color: #dedede;
-  display: flex;
-  align-items: center;
 }
 
 /*Mobile*/
