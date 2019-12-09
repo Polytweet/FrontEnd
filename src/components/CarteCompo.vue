@@ -308,8 +308,9 @@ export default {
         element.properties.hashtags1 = "";
         this.communesInfo.push(element.properties);
       });
-      console.log(resApolloHash.data.tweetsFromDepartement);
+     // console.log(resApolloHash.data.tweetsFromDepartement);
       resApolloHash.data.tweetsFromDepartement.forEach(tweet => {
+     
         var com = this.communes.find(c => {
           return (
             c.properties.nom.toUpperCase() === tweet.geoTweet.city.toUpperCase()
@@ -340,7 +341,7 @@ export default {
           var max = 0;
           for (var clé of c.properties.hashtags.keys()) {
             if (c.properties.hashtags.get(clé) > max) {
-              console.log(clé.toString());
+            //  console.log(clé.toString());
               c.properties.hashtags1 = clé;
               max = c.properties.hashtags.get(clé);
             }
