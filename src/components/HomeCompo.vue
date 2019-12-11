@@ -1,5 +1,5 @@
 <template>
-  <div>
+
     <div class="home">
       <div class="svgHome">
         <img
@@ -23,10 +23,7 @@
           </router-link>
         </div>
       </div>
-    </div>
-    <div class="compteur">
-      <h1>{{dataCompteur}}</h1>
-    </div>
+
   </div>
   <!-- 
   explication projet
@@ -35,36 +32,21 @@
 </template>
 
 <script>
+
 export default {
   name: "HomeCompo",
+
   data() {
-    return {
-      dataCompteur: 175302
-    };
+
   },
-  props: {},
-  methods: {
-    regenerateDataCompteur() {
-      console.log("regen");
-    }
-  },
-  watch: {
-    dataCompteur: () => {
-      var digits = ("" + this.dataCompteur).split("");
-      console.log(digits);
-    }
-  },
-  mounted() {
-    this.regenerateDataCompteur();
-  }
+  props: {}
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 /* Home */
-.home,
-.compteur {
+.home{
   height: 100vh;
   width: 100vw;
 }
@@ -72,7 +54,6 @@ export default {
   display: flex;
   align-items: center;
   max-width: 100%;
-  overflow: hidden;
   z-index: -1;
 }
 .svgHome {
@@ -82,7 +63,9 @@ export default {
   top: 0px;
   left: 0px;
   z-index: -1;
+  overflow: hidden;
 }
+
 
 /*Text*/
 .textWrapper {
@@ -100,13 +83,6 @@ export default {
   .textWrapper {
     margin-left: 15px;
   }
-}
-
-/* Compteur */
-.compteur {
-  background-color: #dedede;
-  display: flex;
-  align-items: center;
 }
 
 /*Mobile*/

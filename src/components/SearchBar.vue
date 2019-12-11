@@ -43,7 +43,7 @@
             <div class="d-flex flex-wrap w-100">
               <!-- Chips -->
               <div class="chip mt-1" v-for="chips in chipsList" v-bind:key="chips.title">
-                <span class="mx-auto">{{chips.title.split(' ').slice(0,2).join(' ')}}</span>
+                <span class="mx-auto">{{chips.title.split(' ').slice(0,4).join(' ')}}</span>
                 <i
                   class="fas fa-times-circle ml-1 float-right text-right"
                   v-on:click="removeToChipsList(chips)"
@@ -57,7 +57,7 @@
           <div class="newsList mt-4">
             <div class="d-flex justify-content-between">
               <h6 class="mr-3 text-left">News</h6>
-               <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
+              <h6 class="mr-3 text-right">{{getNews.length}} résultats</h6>
             </div>
             <!-- List -->
 
@@ -86,7 +86,7 @@
         class="filterItemContainer d-flex justify-content-center align-items-center"
         @click="wrapperExp = !wrapperExp"
       >
-        <i class="fas fa-layer-group"></i>
+        <i class="fas fa-layer-group" src="@/assets/svg/layer-group-solid.svg"></i>
       </div>
       <div class="col" v-if="wrapperExp">
         <div
@@ -94,8 +94,16 @@
           :class="{ filterActive: currentFilter=='france'}"
           @click="currentFilter = 'franceN'"
         >
-          <i class="far fa-circle" v-if="currentFilter!='france'"></i>
-          <i class="far fa-check-circle" v-if="currentFilter=='france'"></i>
+          <i
+            class="far fa-circle"
+            src="@/assets/svg/circle-regular.svg"
+            v-if="currentFilter!='france'"
+          ></i>
+          <i
+            class="far fa-check-circle"
+            src="@/assets/svg/check-circle-regular.svg"
+            v-if="currentFilter=='france'"
+          ></i>
           <h6>France</h6>
         </div>
         <div
@@ -103,8 +111,16 @@
           :class="{ filterActive: currentFilter=='departement'}"
           @click="currentFilter = 'departementN'"
         >
-          <i class="far fa-circle" v-if="currentFilter!='departement'"></i>
-          <i class="far fa-check-circle" v-if="currentFilter=='departement'"></i>
+          <i
+            class="far fa-circle"
+            src="@/assets/svg/circle-regular.svg"
+            v-if="currentFilter!='departement'"
+          ></i>
+          <i
+            class="far fa-check-circle"
+            src="@/assets/svg/check-circle-regular.svg"
+            v-if="currentFilter=='departement'"
+          ></i>
           <h6>
             Dépar-
             <br />tement
@@ -115,14 +131,26 @@
           :class="{ filterActive: currentFilter=='commune'}"
           @click="currentFilter = 'communeN'"
         >
-          <i class="far fa-circle" v-if="currentFilter!='commune'"></i>
-          <i class="far fa-check-circle" v-if="currentFilter=='commune'"></i>
+          <i
+            class="far fa-circle"
+            src="@/assets/svg/circle-regular.svg"
+            v-if="currentFilter!='commune'"
+          ></i>
+
+          <i
+            class="far fa-check-circle"
+            src="@/assets/svg/check-circle-regular.svg"
+            v-if="currentFilter=='commune'"
+          ></i>
           <h6>Commune</h6>
         </div>
       </div>
     </div>
+
+    <!-- Position -->
     <div class="getPosition d-flex justify-content-center align-items-center">
-  <i class="fas fa-map-marker-alt"></i>
+      <!--    <i class="fas fa-map-marker-alt" src="@/assets/svg/gps_fixed-24px.svg"></i> -->
+      <img class="fas fa-map-marker-alt" src="@/assets/svg/gps_fixed-24px.svg" />
     </div>
   </div>
 </template>
@@ -131,9 +159,7 @@
  
 
 <script>
-import json from "../assets/json/news.json";
 import gql from "graphql-tag";
-
 export default {
   name: "SearchBar",
 
@@ -143,7 +169,7 @@ export default {
       inputSearchFocus: false,
       chipsList: [],
       filter: "",
-      news: json
+      news: []
     };
   },
   created() {
@@ -186,15 +212,15 @@ export default {
         `
       });
       this.news = resApollo.data.news;
-    },
+    }
   },
   computed: {
-     currentFilter: {
-      get () {
-        return this.$store.state.currentFilter
+    currentFilter: {
+      get() {
+        return this.$store.state.currentFilter;
       },
-      set (newV) {
-        this.$store.state.currentFilter = newV
+      set(newV) {
+        this.$store.state.currentFilter = newV;
       }
     },
     getNews() {
@@ -401,7 +427,7 @@ export default {
 
 .filterSideNav .row {
   padding: 0px;
-  border-top: 2px solid #798186c2;
+  border-top: 2px solid #999fa3;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -415,7 +441,7 @@ export default {
 .filterSideNav i,
 .getPosition i {
   font-size: 22px;
-  color: #798186c2;
+  color: #999fa3;
 }
 
 .filterItemContainer {
@@ -426,9 +452,9 @@ export default {
   color: #798186c2;
   font-size: 26px;
 }
-.filterSideNav .row.filterActive,
+.filterSideNav .row.filterActive h6,
 .filterSideNav .row.filterActive i {
-  color: #6892fc;
+  color: #6892fc !important;
 }
 
 /* =============================
