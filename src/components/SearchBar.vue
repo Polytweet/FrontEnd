@@ -91,20 +91,20 @@
       <div class="col" v-if="wrapperExp">
         <div
           class="row"
-          :class="{ filterActive: currentFilter=='france'}"
-          @click="currentFilter = 'franceN'"
+          :class="{ filterActive: currentFilter=='region'}"
+          @click="currentFilter = 'regionN'"
         >
           <i
             class="far fa-circle"
             src="@/assets/svg/circle-regular.svg"
-            v-if="currentFilter!='france'"
+            v-if="currentFilter!='region'"
           ></i>
           <i
             class="far fa-check-circle"
             src="@/assets/svg/check-circle-regular.svg"
-            v-if="currentFilter=='france'"
+            v-if="currentFilter=='region'"
           ></i>
-          <h6>France</h6>
+          <h6>Régions</h6>
         </div>
         <div
           class="row"

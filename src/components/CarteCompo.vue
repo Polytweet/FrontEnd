@@ -143,19 +143,19 @@ export default {
     // `
   },
   mounted() {
-    this.getDeptDataFromGeoJson();
+    this.getRegDataFromGeoJson();
     // this.getDataFromGeoJson(69)
   },
   created() {
     window.addEventListener("click", () => {
       switch (this.$store.state.currentFilter) {
-        case "franceN":
+        case "regionN":
           this.zoomUpdated(6);
-          this.getDeptDataFromGeoJson();
+          this.getRegDataFromGeoJson();
           this.value.key = "rien";
           this.value.metric = "";
           this.extraValues = [];
-          this.$store.state.currentFilter = "france";
+          this.$store.state.currentFilter = "region";
           break;
         case "departementN":
           this.zoomUpdated(7);
@@ -218,7 +218,7 @@ export default {
             );
           });
       }
-      if (this.$store.state.currentFilter === "france") {
+      if (this.$store.state.currentFilter === "region") {
         (this.center = [event.latlng.lat, event.latlng.lng]),
           (this.$store.state.currentFilter = "departementN");
       }
@@ -353,13 +353,13 @@ export default {
     },
     updateZoom() {
       switch (this.$store.state.currentFilter) {
-        case "franceN":
+        case "regionN":
           this.zoomUpdated(6);
-          this.getDeptDataFromGeoJson();
+          this.getRegDataFromGeoJson();
           this.value.key = "rien";
           this.value.metric = "";
           this.extraValues = [];
-          this.$store.state.currentFilter = "france";
+          this.$store.state.currentFilter = "region";
           break;
         case "departementN":
           this.zoomUpdated(7);
@@ -385,6 +385,40 @@ export default {
           this.$store.state.currentFilter = "commune";
           break;
       }
+    },
+    async getRegDataFromGeoJson() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            regions {
+              type
+              properties {
+                code
+                nom
+              }
+              geometry {
+                type: _type
+                coordinates
+                coordinatesMulti
+              }
+            }
+          }
+        `
+      });
+      this.communes = resApollo.data.regions;
+      this.communes.forEach(c => {
+        if (
+                c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false
+        ) {
+          c.geometry.coordinates = c.geometry.coordinatesMulti;
+        }
+      });
+      this.communesInfo = [];
+      resApollo.data.regions.forEach(element => {
+        element.properties.rien = "";
+        this.communesInfo.push(element.properties);
+      });
+      this.updateZoom();
     },
     async getDeptDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
