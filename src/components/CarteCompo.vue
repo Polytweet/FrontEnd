@@ -48,8 +48,10 @@
                       <i class="fab fa-twitter"></i>
                     </h6>
                   </div>
-                  <div v-if="props.currentItem.extraValues[1].value !== ''">
-                    <span>#{{props.currentItem.extraValues[1].value}}</span>
+                  <div v-if="props.currentItem.extraValues[1].value.length > 0" >
+                    <div v-for="(hashtag, index) in props.currentItem.extraValues[1].value" v-if="index < 5" :key="hashtag.hashtag + hashtag.count">
+                      <span>#{{hashtag.hashtag}}</span>
+                    </div>
                   </div>
                   <div v-else>Nous n'avons aucun tweet provenant de cet endroit.</div>
 
@@ -291,10 +293,11 @@ export default {
       let resApolloHash = await this.$apollo.query({
         query: gql`
           query {
-            tweetsFromDepartement(depCode: ${codeDept}) {
-              hashtag
-              geoTweet {
-                city
+            topHashtagsFromAllCitiesInOneDepartement(depCode:"${codeDept}") {
+              _id
+              hashtags {
+                hashtag
+                count
               }
             }
           }
@@ -304,48 +307,53 @@ export default {
       this.communesInfo = [];
       resApollo.data.communes.forEach(element => {
         element.properties.rien = "";
-        element.properties.hashtags = new Map();
+        element.properties.hashtags = [];
         element.properties.hashtags1 = "";
         this.communesInfo.push(element.properties);
       });
      // console.log(resApolloHash.data.tweetsFromDepartement);
-      resApolloHash.data.tweetsFromDepartement.forEach(tweet => {
-     
+      resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement.forEach(topHash => {
+        // console.log(topHash._id)
+        // console.log(topHash.hashtags)
+        if (topHash._id == 13201)
+          console.log(topHash)
         var com = this.communes.find(c => {
+          if (c.properties.nom.toUpperCase().indexOf("LYON") == 0 && topHash._id == 69123) {
+            return true
+          }
+          if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 && topHash._id == 13201) {
+            return true
+          }
           return (
-            c.properties.nom.toUpperCase() === tweet.geoTweet.city.toUpperCase()
+            (('' + codeDept + '' + c.properties.code === topHash._id))
           );
         });
         if (com) {
-          tweet.hashtag.forEach(h => {
-            if (com.properties.hashtags.has(h)) {
-              com.properties.hashtags.set(
-                h,
-                com.properties.hashtags.get(h) + 1
-              );
-            } else {
-              com.properties.hashtags.set(h, 1);
-            }
-          });
+          console.log(com.properties.nom)
+          com.properties.hashtags = topHash.hashtags
         }
       });
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
-          // console.log(c.properties)
-          // console.log(c.properties.hashtags.keys()[0])
-          //c.properties.hashtags.sort((a, b) => {
-          //  return a > b
-          //})
-          // console.log(c.properties.hashtags.find((h) => { return h !== undefined }))
-          // c.properties.hashtags.forEach((h) => { console.log(h.key) })
-          var max = 0;
-          for (var clé of c.properties.hashtags.keys()) {
-            if (c.properties.hashtags.get(clé) > max) {
-            //  console.log(clé.toString());
-              c.properties.hashtags1 = clé;
-              max = c.properties.hashtags.get(clé);
-            }
+          c.properties.hashtags.sort((a, b) => {
+            return b.count - a.count
+          })
+          if (c.properties.nom.toUpperCase().indexOf("LYON") == 0) {
+            this.communes.forEach((co) => {
+              if (co.properties.nom.toUpperCase().indexOf("LYON") == 0) {
+                co.properties.hashtags = c.properties.hashtags
+              }
+            })
           }
+          if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0) {
+            this.communes.forEach((co) => {
+              if (co.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0) {
+                co.properties.hashtags = c.properties.hashtags
+              }
+            })
+          }
+          if (c.properties.hashtags.length > 0)
+          c.properties.hashtags1 = c.properties.hashtags[0].hashtag
         }
       });
       this.$store.state.currentFilter = "communeN";
@@ -379,7 +387,7 @@ export default {
               metric: " ha"
             },
             {
-              key: "hashtags1"
+              key: "hashtags"
             }
           ];
           this.$store.state.currentFilter = "commune";
