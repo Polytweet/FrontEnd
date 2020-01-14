@@ -35,11 +35,7 @@
                 <div
                   v-if="props.currentItem.value!=undefined && props.currentItem.extraValues!=undefined && props.currentItem.extraValues[0]!=undefined"
                 >
-                  <!-- City -->
-                  <!--   <span>{{props.currentItem.value}}hab</span>
-                  <br />
-                  <span>{{props.currentItem.extraValues[0].value}}{{props.currentItem.extraValues[0].metric}}</span>
-                  <br />-->
+
                   <!-- TopTweet -->
                   <hr />
                   <div class="d-flex align-items-center justify-content-center">
@@ -47,7 +43,7 @@
                     <TwitterIcon class="fab twitter-icon text-muted" />
                   </div>
 
-                  <div v-if="props.currentItem.extraValues[1].value.length > 0">
+                  <div v-if="props.currentItem.extraValues[1].value && props.currentItem.extraValues[1].value.length > 0">
                     <div
                       class="list-group"
                       v-for="(hashtag, index) in props.currentItem.extraValues[1].value"
@@ -58,7 +54,9 @@
                   </div>
                   <div v-else>Nous n'avons aucun tweet provenant de cet endroit.</div>
 
+                  <div> {{parseInt(props.currentItem.extraValues[2].value * 100)/100 + ' Tweets par jours'}}  </div>
                   <!--/TopTweet -->
+
                 </div>
               </div>
             </div>
@@ -70,13 +68,11 @@
 </template>
 
 <script>
-// InfoControl
 import { ChoroplethLayer } from "vue-choropleth";
 import { LMap, LTileLayer } from "vue2-leaflet";
 import axios from "axios";
 import gql from "graphql-tag";
 import TwitterIcon from "@/assets/svg/twitter-brands.svg";
-// "l-info-control": InfoControl,
 export default {
   name: "CarteCompo",
   components: {
@@ -104,82 +100,22 @@ export default {
       communes: {},
       communesInfo: [],
       pyDepartmentsData: [],
-      currentFilter: "Region",
-      colorScale: ["e7d090", "e9ae7b", "de7062"],
-      value: {
-        key: "population",
-        metric: " hab"
-      },
-      extraValues: [
-        {
-          key: "superficie",
-          metric: " ha"
-        }
-      ],
+      currentFilter: "commune",
+      colorScale: ["90d0e7", "7baee9", "6270de"],
+      value: {},
+      extraValues: [],
       mapOptions: {
         attributionControl: false
       },
       currentStrokeColor: "333333"
     };
   },
-  apollo: {
-    // Simple query that will update the 'communes' vue property
-    // communes: gql`
-    //   query {
-    //     communes(code_dept: "42") {
-    //       type
-    //       properties: fields {
-    //         population
-    //         superficie
-    //         code_com
-    //         nom_com
-    //       }
-    //       geometry {
-    //         type: _type
-    //         coordinates
-    //       }
-    //     }
-    //   }
-    // `
-  },
-  mounted() {
-    this.getRegDataFromGeoJson();
-    // this.getDataFromGeoJson(69)
-  },
   created() {
+    // Update à chaque click
     window.addEventListener("click", () => {
-      this.currentFilter = this.$store.state.currentFilter;
-      switch (this.$store.state.currentFilter) {
-        case "regionN":
-          this.zoomUpdated(6);
-          this.getRegDataFromGeoJson();
-          this.value.key = "rien";
-          this.value.metric = "";
-          this.extraValues = [];
-          this.$store.state.currentFilter = "region";
-          break;
-        case "departementN":
-          this.zoomUpdated(7);
-          this.getDeptDataFromGeoJson();
-          this.value.key = "rien";
-          this.value.metric = "";
-          this.extraValues = [];
-          this.$store.state.currentFilter = "departement";
-          break;
-        case "communeN":
-          this.zoomUpdated(10);
-          this.value.key = "population";
-          this.value.metric = "hab";
-          this.extraValues = [
-            {
-              key: "superficie",
-              metric: " ha"
-            }
-          ];
-          this.$store.state.currentFilter = "commune";
-          break;
-      }
+      this.updateZoom()
     });
+    // Ajout du listener sur le bouton de géolocalisation
     window.addEventListener("load", () => {
       document
         .getElementsByClassName("getPosition")[0]
@@ -187,6 +123,8 @@ export default {
           this.getCurrentLocation();
         });
     });
+
+    this.getCurrentLocation();
   },
   methods: {
     zoomUpdated(zoom) {
@@ -199,55 +137,33 @@ export default {
       this.bounds = bounds;
     },
     getCoord(event) {
+      // Si on passe en commune on regarde où le user a cliqué
       if (this.$store.state.currentFilter === "departement") {
-        axios
-          .get(
-            "https://api.opencagedata.com/geocode/v1/json?q=" +
-              event.latlng.lat +
-              "+" +
-              event.latlng.lng +
-              "&key=6cb782be82c646cfb05d9471b7ca2961"
-          )
-          .then(res => {
-            console.log(
-              res.data.results[0].components.state_district.toUpperCase()
-            );
-            this.center = [event.latlng.lat, event.latlng.lng];
-            this.getDataFromGeoJson(
-              res.data.results[0].components.state_district.toUpperCase(),
-              res.data.results[0].components.postcode.substring(0, 2)
-            );
-          });
+        this.getCommunesFromEvent(event.latlng.lat, event.latlng.lng)
       }
+
       if (this.$store.state.currentFilter === "region") {
-        (this.center = [event.latlng.lat, event.latlng.lng]),
-          (this.$store.state.currentFilter = "departementN");
+        this.centerUpdated([event.latlng.lat, event.latlng.lng])
+        this.$store.state.currentFilter = "departementN"
+        this.updateZoom()
       }
+    },
+    getCommunesFromEvent(lat, lng) {
+      axios.get("https://api.opencagedata.com/geocode/v1/json?q=" + lat + "+" + lng +
+              "&key=6cb782be82c646cfb05d9471b7ca2961")
+        .then(res => {
+          this.centerUpdated([lat, lng])
+          this.getDataFromGeoJson(
+            res.data.results[0].components.state_district.toUpperCase(),
+            res.data.results[0].components.postcode.substring(0, 2)
+          );
+        });
     },
     getCurrentLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           position => {
-            //do work work here
-            console.log(position);
-            this.center = [position.coords.latitude, position.coords.longitude];
-            axios
-              .get(
-                "https://api.opencagedata.com/geocode/v1/json?q=" +
-                  position.coords.latitude +
-                  "+" +
-                  position.coords.longitude +
-                  "&key=6cb782be82c646cfb05d9471b7ca2961"
-              )
-              .then(res => {
-                console.log(
-                  res.data.results[0].components.state_district.toUpperCase()
-                );
-                this.getDataFromGeoJson(
-                  res.data.results[0].components.state_district.toUpperCase(),
-                  res.data.results[0].components.postcode.substring(0, 2)
-                );
-              });
+            this.getCommunesFromEvent(position.coords.latitude, position.coords.longitude)
           },
           function(error) {
             alert(error.message);
@@ -302,37 +218,56 @@ export default {
           }
         `
       });
+      let resApolloDeb = await this.$apollo.query({
+        query: gql`
+          query {
+            tweetsPerDayFromAllCitiesInOneDepartement(depCode: "${codeDept}") {_id, count}
+          }
+        `
+      });
       this.communes = resApollo.data.communes;
+      /*
+      this.communes.forEach(c => {
+        if (c.geometry.coordinates.length == 0) {
+          c.geometry.coordinates = c.geometry.coordinatesMulti;
+        }
+      });
+      */
       this.communesInfo = [];
       resApollo.data.communes.forEach(element => {
         element.properties.rien = "";
         element.properties.hashtags = [];
         element.properties.hashtags1 = "";
+        element.properties.debit = 0;
         this.communesInfo.push(element.properties);
       });
-      // console.log(resApolloHash.data.tweetsFromDepartement);
+
+      resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement.forEach((r) => {
+        var com = this.communes.find(c => {
+          if (c.properties.nom.toUpperCase().indexOf("LYON") == 0 && r._id == 69123) {
+            return true;
+          }
+          if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 && r._id == 13201) {
+            return true;
+          }
+          return "" + codeDept + "" + c.properties.code === r._id;
+        });
+        if (com) {
+          com.properties.debit = r.count;
+        }
+      })
       resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement.forEach(
         topHash => {
-          // console.log(topHash._id)
-          // console.log(topHash.hashtags)
-          if (topHash._id == 13201) console.log(topHash);
           var com = this.communes.find(c => {
-            if (
-              c.properties.nom.toUpperCase().indexOf("LYON") == 0 &&
-              topHash._id == 69123
-            ) {
+            if (c.properties.nom.toUpperCase().indexOf("LYON") == 0 && topHash._id == 69123) {
               return true;
             }
-            if (
-              c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 &&
-              topHash._id == 13201
-            ) {
+            if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 && topHash._id == 13201) {
               return true;
             }
             return "" + codeDept + "" + c.properties.code === topHash._id;
           });
           if (com) {
-            console.log(com.properties.nom);
             com.properties.hashtags = topHash.hashtags;
           }
         }
@@ -346,6 +281,7 @@ export default {
             this.communes.forEach(co => {
               if (co.properties.nom.toUpperCase().indexOf("LYON") == 0) {
                 co.properties.hashtags = c.properties.hashtags;
+                co.properties.debit = c.properties.debit;
               }
             });
           }
@@ -368,22 +304,44 @@ export default {
         case "regionN":
           this.zoomUpdated(6);
           this.getRegDataFromGeoJson();
-          this.value.key = "rien";
+          this.value.key = "debit";
           this.value.metric = "";
-          this.extraValues = [];
+          this.extraValues = [
+            {
+              key: "superficie",
+              metric: " ha"
+            },
+            {
+              key: "hashtags"
+            },
+            {
+              key: "debit"
+            }
+          ];
           this.$store.state.currentFilter = "region";
           break;
         case "departementN":
           this.zoomUpdated(7);
           this.getDeptDataFromGeoJson();
-          this.value.key = "rien";
+          this.value.key = "debit";
           this.value.metric = "";
-          this.extraValues = [];
+          this.extraValues = [
+            {
+              key: "superficie",
+              metric: " ha"
+            },
+            {
+              key: "hashtags"
+            },
+            {
+              key: "debit"
+            }
+          ];
           this.$store.state.currentFilter = "departement";
           break;
         case "communeN":
           this.zoomUpdated(10);
-          this.value.key = "population";
+          this.value.key = "debit";
           this.value.metric = "hab";
           this.extraValues = [
             {
@@ -392,6 +350,9 @@ export default {
             },
             {
               key: "hashtags"
+            },
+            {
+              key: "debit"
             }
           ];
           this.$store.state.currentFilter = "commune";
@@ -401,8 +362,8 @@ export default {
     async getRegDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
         query: gql`
-          query {
-            regions {
+            query {
+              regions {
               type
               properties {
                 code
@@ -417,40 +378,114 @@ export default {
           }
         `
       });
+
+      let resApolloHash = await this.$apollo.query({
+        query: gql`
+          query {
+            topHashtagsFromAllRegions {
+              _id
+              hashtags {
+                hashtag
+                count
+              }
+            }
+          }
+        `
+      });
+      let resApolloDeb = await this.$apollo.query({
+        query: gql`
+          query {
+            tweetsPerDayFromAllRegions {_id, count}
+          }
+        `
+      });
+
       this.communes = resApollo.data.regions;
       this.communes.forEach(c => {
-        if (
-          c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false
-        ) {
+        if (c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false) {
           c.geometry.coordinates = c.geometry.coordinatesMulti;
         }
       });
       this.communesInfo = [];
       resApollo.data.regions.forEach(element => {
         element.properties.rien = "";
+        element.properties.hashtags = [];
+        element.properties.hashtags1 = "";
+        element.properties.debit = 0;
         this.communesInfo.push(element.properties);
       });
-      this.updateZoom();
+
+      resApolloDeb.data.tweetsPerDayFromAllRegions.forEach((r) => {
+        var com = this.communes.find(c => {
+          return c.properties.code === r._id;
+        });
+        if (com) {
+          com.properties.debit = r.count;
+        }
+      })
+
+      resApolloHash.data.topHashtagsFromAllRegions.forEach(
+              topHash => {
+                var com = this.communes.find(c => {
+                  return c.properties.code === topHash._id;
+                });
+                if (com) {
+                  com.properties.hashtags = topHash.hashtags;
+                }
+              }
+      );
+      this.communes.forEach(c => {
+        if (c.properties.hashtags.size !== 0) {
+          c.properties.hashtags.sort((a, b) => {
+            return b.count - a.count;
+          });
+          if (c.properties.hashtags.length > 0)
+            c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
+        }
+      });
+
     },
     async getDeptDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
         query: gql`
-          query {
-            departements {
-              type
-              properties {
-                code
-                nom
+            query {
+              departements {
+                type
+                properties {
+                  code
+                  nom
+                }
+                geometry {
+                  type: _type
+                  coordinates
+                  coordinatesMulti
+                }
               }
-              geometry {
-                type: _type
-                coordinates
-                coordinatesMulti
+            }
+        `
+      });
+
+      let resApolloHash = await this.$apollo.query({
+        query: gql`
+          query {
+            topHashtagsFromAllDepartements {
+              _id
+              hashtags {
+                hashtag
+                count
               }
             }
           }
         `
       });
+      let resApolloDeb = await this.$apollo.query({
+        query: gql`
+          query {
+            tweetsPerDayFromAllDepartements {_id, count}
+          }
+        `
+      });
+
       this.communes = resApollo.data.departements;
       this.communes.forEach(c => {
         if (
@@ -462,9 +497,40 @@ export default {
       this.communesInfo = [];
       resApollo.data.departements.forEach(element => {
         element.properties.rien = "";
+        element.properties.hashtags = [];
+        element.properties.hashtags1 = "";
+        element.properties.debit = 0;
         this.communesInfo.push(element.properties);
       });
-      this.updateZoom();
+
+      resApolloDeb.data.tweetsPerDayFromAllDepartements.forEach((r) => {
+        var com = this.communes.find(c => {
+          return c.properties.code === r._id;
+        });
+        if (com) {
+          com.properties.debit = r.count;
+        }
+      })
+
+      resApolloHash.data.topHashtagsFromAllDepartements.forEach(
+        topHash => {
+          var com = this.communes.find(c => {
+            return c.properties.code === topHash._id;
+          });
+          if (com) {
+            com.properties.hashtags = topHash.hashtags;
+          }
+        }
+      );
+      this.communes.forEach(c => {
+        if (c.properties.hashtags.size !== 0) {
+          c.properties.hashtags.sort((a, b) => {
+            return b.count - a.count;
+          });
+          if (c.properties.hashtags.length > 0)
+            c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
+        }
+      });
     }
   }
 };
