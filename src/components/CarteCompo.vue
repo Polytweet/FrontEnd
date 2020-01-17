@@ -35,7 +35,6 @@
                 <div
                   v-if="props.currentItem.value!=undefined && props.currentItem.extraValues!=undefined && props.currentItem.extraValues[0]!=undefined"
                 >
-
                   <!-- TopTweet -->
                   <hr />
                   <div class="d-flex align-items-center justify-content-center">
@@ -43,7 +42,9 @@
                     <TwitterIcon class="fab twitter-icon text-muted" />
                   </div>
 
-                  <div v-if="props.currentItem.extraValues[1].value && props.currentItem.extraValues[1].value.length > 0">
+                  <div
+                    v-if="props.currentItem.extraValues[1].value && props.currentItem.extraValues[1].value.length > 0"
+                  >
                     <div
                       class="list-group"
                       v-for="(hashtag, index) in props.currentItem.extraValues[1].value"
@@ -54,9 +55,23 @@
                   </div>
                   <div v-else>Nous n'avons aucun tweet provenant de cet endroit.</div>
 
-                  <div> {{parseInt(props.currentItem.extraValues[2].value * 100)/100 + ' Tweets par jours'}}  </div>
-                  <!--/TopTweet -->
+                  <!-- Nb Tweets per days -->
 
+                  <hr />
+                  <div class="d-flex align-items-center justify-content-center">
+                    <h6 class="card-subtitle my-0 mr-1 text-muted">Statistiques</h6>
+                    <StatIcon class="fas chart-bar-icon text-muted" />
+                  </div>
+
+                  <div class="d-flex align-items-center justify-content-between w-100 mt-2">
+                    <h6 class style="font-size:13px;">Tweets par jours</h6>
+                    <h6
+                      style="font-size:13px;"
+                    >{{Math.round(props.currentItem.extraValues[2].value)}}</h6>
+                  </div>
+                  <GaugeCompo v-bind:nbTweetDay="props.currentItem.extraValues[2].value"></GaugeCompo>
+                  <!-- /Nb Tweets per days -->
+                  <!--/TopTweet -->
                 </div>
               </div>
             </div>
@@ -73,13 +88,17 @@ import { LMap, LTileLayer } from "vue2-leaflet";
 import axios from "axios";
 import gql from "graphql-tag";
 import TwitterIcon from "@/assets/svg/twitter-brands.svg";
+import StatIcon from "@/assets/svg/chart-bar-solid.svg";
+import GaugeCompo from "./GaugeCompo";
 export default {
   name: "CarteCompo",
   components: {
     LMap,
     LTileLayer,
     "l-choropleth-layer": ChoroplethLayer,
-    TwitterIcon
+    TwitterIcon,
+    StatIcon,
+    GaugeCompo
   },
   props: {
     currentSideState: {
@@ -113,7 +132,7 @@ export default {
   created() {
     // Update à chaque click
     window.addEventListener("click", () => {
-      this.updateZoom()
+      this.updateZoom();
     });
     // Ajout du listener sur le bouton de géolocalisation
     window.addEventListener("load", () => {
@@ -139,20 +158,26 @@ export default {
     getCoord(event) {
       // Si on passe en commune on regarde où le user a cliqué
       if (this.$store.state.currentFilter === "departement") {
-        this.getCommunesFromEvent(event.latlng.lat, event.latlng.lng)
+        this.getCommunesFromEvent(event.latlng.lat, event.latlng.lng);
       }
 
       if (this.$store.state.currentFilter === "region") {
-        this.centerUpdated([event.latlng.lat, event.latlng.lng])
-        this.$store.state.currentFilter = "departementN"
-        this.updateZoom()
+        this.centerUpdated([event.latlng.lat, event.latlng.lng]);
+        this.$store.state.currentFilter = "departementN";
+        this.updateZoom();
       }
     },
     getCommunesFromEvent(lat, lng) {
-      axios.get("https://api.opencagedata.com/geocode/v1/json?q=" + lat + "+" + lng +
-              "&key=6cb782be82c646cfb05d9471b7ca2961")
+      axios
+        .get(
+          "https://api.opencagedata.com/geocode/v1/json?q=" +
+            lat +
+            "+" +
+            lng +
+            "&key=6cb782be82c646cfb05d9471b7ca2961"
+        )
         .then(res => {
-          this.centerUpdated([lat, lng])
+          this.centerUpdated([lat, lng]);
           this.getDataFromGeoJson(
             res.data.results[0].components.state_district.toUpperCase(),
             res.data.results[0].components.postcode.substring(0, 2)
@@ -163,7 +188,10 @@ export default {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           position => {
-            this.getCommunesFromEvent(position.coords.latitude, position.coords.longitude)
+            this.getCommunesFromEvent(
+              position.coords.latitude,
+              position.coords.longitude
+            );
           },
           function(error) {
             alert(error.message);
@@ -242,12 +270,18 @@ export default {
         this.communesInfo.push(element.properties);
       });
 
-      resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement.forEach((r) => {
+      resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement.forEach(r => {
         var com = this.communes.find(c => {
-          if (c.properties.nom.toUpperCase().indexOf("LYON") == 0 && r._id == 69123) {
+          if (
+            c.properties.nom.toUpperCase().indexOf("LYON") == 0 &&
+            r._id == 69123
+          ) {
             return true;
           }
-          if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 && r._id == 13201) {
+          if (
+            c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 &&
+            r._id == 13201
+          ) {
             return true;
           }
           return "" + codeDept + "" + c.properties.code === r._id;
@@ -255,14 +289,20 @@ export default {
         if (com) {
           com.properties.debit = r.count;
         }
-      })
+      });
       resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement.forEach(
         topHash => {
           var com = this.communes.find(c => {
-            if (c.properties.nom.toUpperCase().indexOf("LYON") == 0 && topHash._id == 69123) {
+            if (
+              c.properties.nom.toUpperCase().indexOf("LYON") == 0 &&
+              topHash._id == 69123
+            ) {
               return true;
             }
-            if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 && topHash._id == 13201) {
+            if (
+              c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 &&
+              topHash._id == 13201
+            ) {
               return true;
             }
             return "" + codeDept + "" + c.properties.code === topHash._id;
@@ -362,8 +402,8 @@ export default {
     async getRegDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
         query: gql`
-            query {
-              regions {
+          query {
+            regions {
               type
               properties {
                 code
@@ -395,14 +435,19 @@ export default {
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
-            tweetsPerDayFromAllRegions {_id, count}
+            tweetsPerDayFromAllRegions {
+              _id
+              count
+            }
           }
         `
       });
 
       this.communes = resApollo.data.regions;
       this.communes.forEach(c => {
-        if (c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false) {
+        if (
+          c.geometry.coordinates ? c.geometry.coordinates.length === 0 : false
+        ) {
           c.geometry.coordinates = c.geometry.coordinatesMulti;
         }
       });
@@ -415,25 +460,23 @@ export default {
         this.communesInfo.push(element.properties);
       });
 
-      resApolloDeb.data.tweetsPerDayFromAllRegions.forEach((r) => {
+      resApolloDeb.data.tweetsPerDayFromAllRegions.forEach(r => {
         var com = this.communes.find(c => {
           return c.properties.code === r._id;
         });
         if (com) {
           com.properties.debit = r.count;
         }
-      })
+      });
 
-      resApolloHash.data.topHashtagsFromAllRegions.forEach(
-              topHash => {
-                var com = this.communes.find(c => {
-                  return c.properties.code === topHash._id;
-                });
-                if (com) {
-                  com.properties.hashtags = topHash.hashtags;
-                }
-              }
-      );
+      resApolloHash.data.topHashtagsFromAllRegions.forEach(topHash => {
+        var com = this.communes.find(c => {
+          return c.properties.code === topHash._id;
+        });
+        if (com) {
+          com.properties.hashtags = topHash.hashtags;
+        }
+      });
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
           c.properties.hashtags.sort((a, b) => {
@@ -443,25 +486,24 @@ export default {
             c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
         }
       });
-
     },
     async getDeptDataFromGeoJson() {
       let resApollo = await this.$apollo.query({
         query: gql`
-            query {
-              departements {
-                type
-                properties {
-                  code
-                  nom
-                }
-                geometry {
-                  type: _type
-                  coordinates
-                  coordinatesMulti
-                }
+          query {
+            departements {
+              type
+              properties {
+                code
+                nom
+              }
+              geometry {
+                type: _type
+                coordinates
+                coordinatesMulti
               }
             }
+          }
         `
       });
 
@@ -481,7 +523,10 @@ export default {
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
-            tweetsPerDayFromAllDepartements {_id, count}
+            tweetsPerDayFromAllDepartements {
+              _id
+              count
+            }
           }
         `
       });
@@ -503,25 +548,23 @@ export default {
         this.communesInfo.push(element.properties);
       });
 
-      resApolloDeb.data.tweetsPerDayFromAllDepartements.forEach((r) => {
+      resApolloDeb.data.tweetsPerDayFromAllDepartements.forEach(r => {
         var com = this.communes.find(c => {
           return c.properties.code === r._id;
         });
         if (com) {
           com.properties.debit = r.count;
         }
-      })
+      });
 
-      resApolloHash.data.topHashtagsFromAllDepartements.forEach(
-        topHash => {
-          var com = this.communes.find(c => {
-            return c.properties.code === topHash._id;
-          });
-          if (com) {
-            com.properties.hashtags = topHash.hashtags;
-          }
+      resApolloHash.data.topHashtagsFromAllDepartements.forEach(topHash => {
+        var com = this.communes.find(c => {
+          return c.properties.code === topHash._id;
+        });
+        if (com) {
+          com.properties.hashtags = topHash.hashtags;
         }
-      );
+      });
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
           c.properties.hashtags.sort((a, b) => {
@@ -558,7 +601,8 @@ export default {
 .card-body {
   padding: 1rem;
 }
-.twitter-icon {
+.twitter-icon,
+.chart-bar-icon {
   height: 16px;
   width: 16px;
 }
