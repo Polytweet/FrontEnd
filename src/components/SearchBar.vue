@@ -158,6 +158,7 @@ export default {
     //Ajoute une news au filtres (chips)
     addToChipsList(data) {
       if (data.chipsSelected != true) {
+        this.$store.state.chipsList.push(data);
         this.chipsList.push(data);
         this.news[this.news.findIndex(x => x._id === data._id)][
           "chipsSelected"
@@ -169,6 +170,14 @@ export default {
       this.news[this.news.findIndex(x => x._id === data._id)][
         "chipsSelected"
       ] = false;
+      this.$store.state.chipsList.splice(
+        this.$store.state.chipsList
+          .map(function(e) {
+            return e.title;
+          })
+          .indexOf(data.title),
+        1
+      );
       this.chipsList.splice(
         this.chipsList
           .map(function(e) {
@@ -207,6 +216,9 @@ export default {
         return player.title.toLowerCase().includes(this.filter.toLowerCase());
       });
       return news;
+    },
+    getChipsList() {
+      return this.$store.state.chipsList
     }
   }
 };

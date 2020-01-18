@@ -141,9 +141,8 @@ export default {
         .addEventListener("click", () => {
           this.getCurrentLocation();
         });
+      this.updateZoom();
     });
-
-    this.getCurrentLocation();
   },
   methods: {
     zoomUpdated(zoom) {
@@ -206,6 +205,19 @@ export default {
       }
       return null;
     },
+    getNewsId() {
+      var newsId = "["
+      var nb = 0
+      this.$store.state.chipsList.forEach((n) => {
+        nb += 1
+        newsId = newsId + '"' + n._id + '",'
+      })
+      if (nb > 0) {
+        newsId = newsId.substr(0, newsId.length - 1)
+      }
+      newsId = newsId + ']'
+      return newsId
+    },
     async getDataFromGeoJson(nomDept, codeDept) {
       var str = "";
       if (codeDept == 20) {
@@ -213,6 +225,7 @@ export default {
       } else {
         str = 'code_dept: "' + codeDept + '"';
       }
+      var newsId = this.getNewsId()
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -236,7 +249,7 @@ export default {
       let resApolloHash = await this.$apollo.query({
         query: gql`
           query {
-            topHashtagsFromAllCitiesInOneDepartement(depCode:"${codeDept}") {
+            topHashtagsFromAllCitiesInOneDepartement(depCode:"${codeDept}", newsId: ${newsId}) {
               _id
               hashtags {
                 hashtag
@@ -249,7 +262,7 @@ export default {
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
-            tweetsPerDayFromAllCitiesInOneDepartement(depCode: "${codeDept}") {_id, count}
+            tweetsPerDayFromAllCitiesInOneDepartement(depCode: "${codeDept}", newsId: ${newsId}) {_id, count}
           }
         `
       });
@@ -400,6 +413,8 @@ export default {
       }
     },
     async getRegDataFromGeoJson() {
+      var newsId = this.getNewsId()
+      console.log(newsId)
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -422,7 +437,7 @@ export default {
       let resApolloHash = await this.$apollo.query({
         query: gql`
           query {
-            topHashtagsFromAllRegions {
+            topHashtagsFromAllRegions(newsId: ${newsId}) {
               _id
               hashtags {
                 hashtag
@@ -435,7 +450,7 @@ export default {
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
-            tweetsPerDayFromAllRegions {
+            tweetsPerDayFromAllRegions(newsId: ${newsId}) {
               _id
               count
             }
@@ -488,6 +503,7 @@ export default {
       });
     },
     async getDeptDataFromGeoJson() {
+      var newsId = this.getNewsId()
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -510,7 +526,7 @@ export default {
       let resApolloHash = await this.$apollo.query({
         query: gql`
           query {
-            topHashtagsFromAllDepartements {
+            topHashtagsFromAllDepartements(newsId: ${newsId}) {
               _id
               hashtags {
                 hashtag
@@ -523,7 +539,7 @@ export default {
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
-            tweetsPerDayFromAllDepartements {
+            tweetsPerDayFromAllDepartements(newsId: ${newsId}) {
               _id
               count
             }
