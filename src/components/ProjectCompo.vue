@@ -5,10 +5,10 @@
     <div class="counter">
       <!-- Affichage des Tweets -->
       <div v-if="showTweet" class="full-height-width">
-        <div v-for="(item, i) in tweetTest" v-bind:key="i+item.hastag">
+        <div v-for="(item) in tweetTest" v-bind:key="item._id">
           <div v-bind:style="item.placement" class="tweet" v-scroll-reveal>
-            <h6>{{ item.hastag + i }}</h6>
-            <span>{{item.text}}</span>
+            <h6>#{{ item.hashtag }}</h6>
+            <span class="text-tweet">{{item.text}}</span>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@
 
 <script>
 import AnimatedNumber from "animated-number-vue";
-
+import gql from "graphql-tag";
 export default {
   name: "ProjectCompo",
   components: {
@@ -127,7 +127,7 @@ export default {
       value: 83739,
       showCounter: false,
       showTweet: false,
-      tweetTest: [
+      tweetTest: [] /*[
         {
           hastag: "#PolyTweet",
           text: "attribute to limit CSS to this ",
@@ -188,13 +188,14 @@ export default {
           text: "attribute to limit CSS to this ",
           placement: ""
         }
-      ]
+      ]*/
     };
   },
   props: {},
   created() {
     console.log("crea");
-    this.placeTweetOnScreen();
+    this.getLast10Tweet();
+    console.log(this.tweetTest);
   },
   methods: {
     formatToPrice(value) {
@@ -262,6 +263,28 @@ export default {
         left: style.left == "0%" ? null : style.left
       };
       return newStyle;
+    },
+    async getLast10Tweet() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            last10tweets {
+              _id
+              hashtag
+              text
+            }
+          }
+        `
+      });
+      let tweetBeforeTransform = resApollo.data.last10tweets;
+      tweetBeforeTransform.forEach(element => {
+        element.hashtag = Array.isArray(element.hashtag)
+          ? element.hashtag[0]
+          : element.hashtag;
+        element.placement = "";
+      });
+      this.tweetTest = tweetBeforeTransform;
+      this.placeTweetOnScreen();
     }
   },
   watch: {
@@ -392,5 +415,11 @@ section {
 /*Tweets placement*/
 .tweet {
   position: absolute;
+}
+span.text-tweet {
+  display: block;
+  width: 250px;
+  line-height: 1;
+  font-size: 13px;
 }
 </style>
