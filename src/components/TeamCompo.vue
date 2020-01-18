@@ -7,7 +7,7 @@
           <b-card>
             <img :src="images.maxence" alt="Profil image" class="card-img-top" />
             <h4 class="card-title mt-3">Maxence Bessy</h4>
-            <b-card-text>This card has supporting text below as a natural lead-in to additional content.</b-card-text>
+            <b-card-text></b-card-text>
             <b-card-text class="small text-muted mx-auto">Front-End</b-card-text>
           </b-card>
         </div>
@@ -16,7 +16,7 @@
           <b-card>
             <img :src="images.marion" alt="Profil image" class="card-img-top" />
             <h4 class="card-title mt-3">Marion Sinaeve</h4>
-            <b-card-text>This card has supporting text below as a natural lead-in to additional content.</b-card-text>
+            <b-card-text></b-card-text>
             <b-card-text class="small text-muted mx-auto">Back-End</b-card-text>
           </b-card>
         </div>
@@ -25,7 +25,7 @@
           <b-card>
             <img :src="images.michael" alt="Profil image" class="card-img-top" />
             <h4 class="card-title mt-3">Michael Bugnone</h4>
-            <b-card-text>This card has supporting text below as a natural lead-in to additional content.</b-card-text>
+            <b-card-text></b-card-text>
             <b-card-text class="small text-muted mx-auto">Back-End</b-card-text>
           </b-card>
         </div>
@@ -34,7 +34,7 @@
           <b-card>
             <img :src="images.aurian" alt="Profil image" class="card-img-top" />
             <h4 class="card-title mt-3">Aurian Durand</h4>
-            <b-card-text>This card has supporting text below as a natural lead-in to additional content.</b-card-text>
+            <b-card-text></b-card-text>
             <b-card-text class="small text-muted mx-auto">Back-End</b-card-text>
           </b-card>
         </div>
@@ -43,7 +43,7 @@
           <b-card>
             <img :src="images.arnaud" alt="Profil image" class="card-img-top" />
             <h4 class="card-title mt-3">Arnaud Volpi</h4>
-            <b-card-text>This card has supporting text below as a natural lead-in to additional content.</b-card-text>
+            <b-card-text></b-card-text>
             <b-card-text class="small text-muted mx-auto">Front-End</b-card-text>
           </b-card>
         </div>
@@ -113,7 +113,7 @@ img {
 .small.text-muted {
   border: 1px solid;
   border-radius: 25rem;
-  width: 30%;
+  width: 100px;
 }
 @media screen and (max-width: 719px) {
   .team {
