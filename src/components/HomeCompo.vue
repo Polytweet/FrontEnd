@@ -35,7 +35,6 @@ import HomeSvg from "@/assets/svg/homePage2-01.svg";
 export default {
   name: "HomeCompo",
   components: { HomeSvg },
-  data() {},
   props: {}
 };
 </script>

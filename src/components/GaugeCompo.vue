@@ -10,9 +10,9 @@
       </div>
 
       <div class="labels">
-        <div class="label label-0">0</div>
-        <div class="label label-50">50</div>
-        <div class="label label-100">100</div>
+        <div class="label label-0">{{minIndicator}}</div>
+        <div class="label label-50">{{medIndicator}}</div>
+        <div class="label label-100">{{maxIndicator}}</div>
       </div>
     </div>
   </div>
@@ -22,19 +22,30 @@
 <script>
 export default {
   name: "GaugeCompo",
-  props: ["nbTweetDay"],
+  props: ["nbTweetDay", "nbTweetMax"],
   data() {
     return {
-      cardIsExpand: false
+      cardIsExpand: false,
+      minIndicator: 0,
+      medIndicator: 50,
+      maxIndicator: 100
     };
   },
-  mounted() {},
+  mounted() {
+    this.calculIndicator();
+  },
 
-  methods: {},
+  methods: {
+    calculIndicator() {
+      this.minIndicator = 0;
+      this.medIndicator = Math.round(this.nbTweetMax / 2);
+      this.maxIndicator = Math.round(this.nbTweetMax);
+    }
+  },
   computed: {
     placeIndicator: function() {
-      let indexIndicator =
-        Math.round(this.nbTweetDay) > 99 ? 99 : Math.round(this.nbTweetDay);
+      let percentTweet = Math.round((this.nbTweetDay / this.nbTweetMax) * 100);
+      let indexIndicator = percentTweet > 99 ? 99 : percentTweet;
       let colorIndicator =
         indexIndicator > 74
           ? "indicator-color-74"
@@ -43,7 +54,6 @@ export default {
           : indexIndicator > 24
           ? "indicator-color-25"
           : "indicator-color-0";
-      console.log(colorIndicator);
       return ["indicator-" + indexIndicator, colorIndicator];
     }
   }

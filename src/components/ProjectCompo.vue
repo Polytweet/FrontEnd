@@ -124,7 +124,7 @@ export default {
   },
   data() {
     return {
-      value: 83739,
+      value: 0,
       showCounter: false,
       showTweet: false,
       tweetTest: [] /*[
@@ -193,9 +193,11 @@ export default {
   },
   props: {},
   created() {
-    console.log("crea");
     this.getLast10Tweet();
-    console.log(this.tweetTest);
+    /* setInterval(() => {
+      this.getNumberOfTweet();
+    }, 1000);*/
+    this.getNumberOfTweet();
   },
   methods: {
     formatToPrice(value) {
@@ -285,6 +287,16 @@ export default {
       });
       this.tweetTest = tweetBeforeTransform;
       this.placeTweetOnScreen();
+    },
+    async getNumberOfTweet() {
+      let resApollo = await this.$apollo.query({
+        query: gql`
+          query {
+            totalNumberOfTweetsUsedByPolytweet
+          }
+        `
+      });
+      this.value = resApollo.data.totalNumberOfTweetsUsedByPolytweet;
     }
   },
   watch: {

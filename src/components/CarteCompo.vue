@@ -41,13 +41,12 @@
                     <h6 class="card-subtitle my-0 mr-1 text-muted">TopTweet</h6>
                     <TwitterIcon class="fab twitter-icon text-muted" />
                   </div>
-
                   <div
-                    v-if="props.currentItem.extraValues[1].value && props.currentItem.extraValues[1].value.length > 0"
+                    v-if="props.currentItem.extraValues[2].value && props.currentItem.extraValues[2].value.length > 0"
                   >
                     <div
                       class="list-group"
-                      v-for="(hashtag, index) in props.currentItem.extraValues[1].value"
+                      v-for="(hashtag, index) in props.currentItem.extraValues[2].value"
                       :key="hashtag.hashtag + hashtag.count"
                     >
                       <span v-if="index < 5" class="text-left mx-auto">#{{hashtag.hashtag}}</span>
@@ -55,21 +54,38 @@
                   </div>
                   <div v-else>Nous n'avons aucun tweet provenant de cet endroit.</div>
 
-                  <!-- Nb Tweets per days -->
-
                   <hr />
                   <div class="d-flex align-items-center justify-content-center">
                     <h6 class="card-subtitle my-0 mr-1 text-muted">Statistiques</h6>
                     <StatIcon class="fas chart-bar-icon text-muted" />
                   </div>
 
+                  <!-- Evolution nb Tweets per days -->
+                  <div class="d-flex align-items-center justify-content-between w-100 mt-2">
+                    <h6 class style="font-size:13px;">Evolution sur les dernière 24 h</h6>
+                    <h6
+                      class
+                      style="font-size:13px;"
+                      v-bind:class="[props.currentItem.extraValues[4].value>0 ? 'text-success' : 'text-danger']"
+                    >
+                      <span
+                        v-if="props.currentItem.extraValues[4].value!==undefined"
+                      >{{props.currentItem.extraValues[4].value}} %</span>
+                    </h6>
+                  </div>
+                  <!-- /Evolution nb Tweets per days -->
+
+                  <!-- Nb Tweets per days -->
                   <div class="d-flex align-items-center justify-content-between w-100 mt-2">
                     <h6 class style="font-size:13px;">Tweets par jours</h6>
                     <h6
                       style="font-size:13px;"
-                    >{{Math.round(props.currentItem.extraValues[2].value)}}</h6>
+                    >{{Math.round(props.currentItem.extraValues[3].value)}}</h6>
                   </div>
-                  <GaugeCompo v-bind:nbTweetDay="props.currentItem.extraValues[2].value"></GaugeCompo>
+                  <GaugeCompo
+                    v-bind:nbTweetDay="props.currentItem.extraValues[3].value"
+                    v-bind:nbTweetMax="nbTweetMax"
+                  ></GaugeCompo>
                   <!-- /Nb Tweets per days -->
                   <!--/TopTweet -->
                 </div>
@@ -121,6 +137,7 @@ export default {
       pyDepartmentsData: [],
       currentFilter: "commune",
       colorScale: ["90d0e7", "7baee9", "6270de"],
+      nbTweetMax: 10,
       value: {},
       extraValues: [],
       mapOptions: {
@@ -206,26 +223,27 @@ export default {
       return null;
     },
     getNewsId() {
-      var newsId = "["
-      var nb = 0
-      this.$store.state.chipsList.forEach((n) => {
-        nb += 1
-        newsId = newsId + '"' + n._id + '",'
-      })
+      var newsId = "[";
+      var nb = 0;
+      this.$store.state.chipsList.forEach(n => {
+        nb += 1;
+        newsId = newsId + '"' + n._id + '",';
+      });
       if (nb > 0) {
-        newsId = newsId.substr(0, newsId.length - 1)
+        newsId = newsId.substr(0, newsId.length - 1);
       }
-      newsId = newsId + ']'
-      return newsId
+      newsId = newsId + "]";
+      return newsId;
     },
     async getDataFromGeoJson(nomDept, codeDept) {
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
       var str = "";
       if (codeDept == 20) {
         str = 'nom_dept: "' + nomDept + '"';
       } else {
         str = 'code_dept: "' + codeDept + '"';
       }
-      var newsId = this.getNewsId()
+      var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -266,6 +284,16 @@ export default {
           }
         `
       });
+      //Contient l'évolution du nombre de tweet par rapport au dernière 24h
+      let resApolloEvolveNbTweet = await this.$apollo.query({
+        query: gql`
+          query {
+           differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement(depCode:"${codeDept}"){zoneNumber,percentage}
+
+          }
+        `
+      });
+
       this.communes = resApollo.data.communes;
       /*
       this.communes.forEach(c => {
@@ -325,6 +353,19 @@ export default {
           }
         }
       );
+
+      //Ajoute le pourcentage d'évolution des tweets par rapport au jour n-1
+      resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement.forEach(
+        item => {
+          var com = this.communes.find(c => {
+            return c.properties.code === item.zoneNumber.substring(2); //retire les deux premiers carac du départ car codeCommune ne contient que les 3 derniers chiffres
+          });
+          if (com) {
+            com.properties.evolveNbTweetDay = item.percentage.toFixed(2);
+          }
+        }
+      );
+
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
           c.properties.hashtags.sort((a, b) => {
@@ -348,6 +389,11 @@ export default {
           if (c.properties.hashtags.length > 0)
             c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
         }
+        //Cherche le nombre de tweetMax pour la zone
+        this.nbTweetMax =
+          c.properties.debit > this.nbTweetMax
+            ? c.properties.debit
+            : this.nbTweetMax;
       });
       this.$store.state.currentFilter = "communeN";
       this.updateZoom();
@@ -361,14 +407,19 @@ export default {
           this.value.metric = "";
           this.extraValues = [
             {
-              key: "superficie",
-              metric: " ha"
+              key: "population"
+            },
+            {
+              key: "superficie"
             },
             {
               key: "hashtags"
             },
             {
               key: "debit"
+            },
+            {
+              key: "evolveNbTweetDay"
             }
           ];
           this.$store.state.currentFilter = "region";
@@ -380,14 +431,19 @@ export default {
           this.value.metric = "";
           this.extraValues = [
             {
-              key: "superficie",
-              metric: " ha"
+              key: "population"
+            },
+            {
+              key: "superficie"
             },
             {
               key: "hashtags"
             },
             {
               key: "debit"
+            },
+            {
+              key: "evolveNbTweetDay"
             }
           ];
           this.$store.state.currentFilter = "departement";
@@ -398,14 +454,19 @@ export default {
           this.value.metric = "hab";
           this.extraValues = [
             {
-              key: "superficie",
-              metric: " ha"
+              key: "population"
+            },
+            {
+              key: "superficie"
             },
             {
               key: "hashtags"
             },
             {
               key: "debit"
+            },
+            {
+              key: "evolveNbTweetDay"
             }
           ];
           this.$store.state.currentFilter = "commune";
@@ -413,8 +474,8 @@ export default {
       }
     },
     async getRegDataFromGeoJson() {
-      var newsId = this.getNewsId()
-      console.log(newsId)
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
+      var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -457,6 +518,17 @@ export default {
           }
         `
       });
+      //Contient l'évolution du nombre de tweet par rapport au dernière 24h
+      let resApolloEvolveNbTweet = await this.$apollo.query({
+        query: gql`
+          query {
+            differenceOfNumberOfTweetsPerDayFromAllRegions(newsId: []) {
+              zoneNumber
+              percentage
+            }
+          }
+        `
+      });
 
       this.communes = resApollo.data.regions;
       this.communes.forEach(c => {
@@ -492,6 +564,19 @@ export default {
           com.properties.hashtags = topHash.hashtags;
         }
       });
+
+      //Ajoute le pourcentage d'évolution des tweets par rapport au jour n-1
+      resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllRegions.forEach(
+        reg => {
+          var com = this.communes.find(c => {
+            return c.properties.code === reg.zoneNumber;
+          });
+          if (com) {
+            com.properties.evolveNbTweetDay = reg.percentage.toFixed(2);
+          }
+        }
+      );
+
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
           c.properties.hashtags.sort((a, b) => {
@@ -500,10 +585,16 @@ export default {
           if (c.properties.hashtags.length > 0)
             c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
         }
+        //Cherche le nombre de tweetMax pour la zone
+        this.nbTweetMax =
+          c.properties.debit > this.nbTweetMax
+            ? c.properties.debit
+            : this.nbTweetMax;
       });
     },
     async getDeptDataFromGeoJson() {
-      var newsId = this.getNewsId()
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
+      var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -546,6 +637,17 @@ export default {
           }
         `
       });
+      //Contient l'évolution du nombre de tweet par rapport au dernière 24h
+      let resApolloEvolveNbTweet = await this.$apollo.query({
+        query: gql`
+          query {
+            differenceOfNumberOfTweetsPerDayFromAllDepartements(newsId: []) {
+              zoneNumber
+              percentage
+            }
+          }
+        `
+      });
 
       this.communes = resApollo.data.departements;
       this.communes.forEach(c => {
@@ -581,6 +683,18 @@ export default {
           com.properties.hashtags = topHash.hashtags;
         }
       });
+      //Ajoute le pourcentage d'évolution des tweets par rapport au jour n-1
+      resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllDepartements.forEach(
+        reg => {
+          var com = this.communes.find(c => {
+            return c.properties.code === reg.zoneNumber;
+          });
+          if (com) {
+            com.properties.evolveNbTweetDay = reg.percentage.toFixed(2);
+          }
+        }
+      );
+
       this.communes.forEach(c => {
         if (c.properties.hashtags.size !== 0) {
           c.properties.hashtags.sort((a, b) => {
@@ -589,6 +703,11 @@ export default {
           if (c.properties.hashtags.length > 0)
             c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
         }
+        //Cherche le nombre de tweetMax pour la zone
+        this.nbTweetMax =
+          c.properties.debit > this.nbTweetMax
+            ? c.properties.debit
+            : this.nbTweetMax;
       });
     }
   }
