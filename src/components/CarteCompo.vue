@@ -294,110 +294,117 @@ export default {
         `
       });
 
+      console.log(resApollo);
+      console.log(resApolloHash);
+      console.log(resApolloDeb);
+      console.log(resApolloEvolveNbTweet);
+
       this.communes = resApollo.data.communes;
-      /*
-      this.communes.forEach(c => {
-        if (c.geometry.coordinates.length == 0) {
-          c.geometry.coordinates = c.geometry.coordinatesMulti;
-        }
-      });
-      */
       this.communesInfo = [];
+
+      /*
+       * Formatage des données recus pour insertion dans la carte leaflet
+       */
       resApollo.data.communes.forEach(element => {
         element.properties.rien = "";
         element.properties.hashtags = [];
         element.properties.hashtags1 = "";
         element.properties.debit = 0;
-        this.communesInfo.push(element.properties);
-      });
+        element.properties.evolveNbTweetDay = 0;
 
-      resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement.forEach(r => {
-        var com = this.communes.find(c => {
-          if (
-            c.properties.nom.toUpperCase().indexOf("LYON") == 0 &&
-            r._id == 69123
-          ) {
-            return true;
-          }
-          if (
-            c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 &&
-            r._id == 13201
-          ) {
-            return true;
-          }
-          return "" + codeDept + "" + c.properties.code === r._id;
+        /* ==============================================================
+            Gestion des arrondissements ( Paris, Lyon, Marseille)
+         =============================================================== */
+        let codeInsee = codeDept + element.properties.code;
+        //Paris
+        if (
+          codeDept + element.properties.code > 75100 &&
+          codeDept + element.properties.code < 75121
+        ) {
+          codeInsee = "75056";
+        }
+        //Lyon
+        else if (
+          codeDept + element.properties.code > 69380 &&
+          codeDept + element.properties.code < 69390
+        ) {
+          codeInsee = "69123";
+        }
+        //Marseille
+        else if (
+          codeDept + element.properties.code > 13200 &&
+          codeDept + element.properties.code < 13217
+        ) {
+          codeInsee = "13055";
+        }
+
+        /* ================================
+           Gestion des hastags par commune
+         ================================= */
+
+        //Cherche si il existe des hastags pour la commune
+        var has = resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement
+          .map(function(x) {
+            return x._id;
+          })
+          .indexOf(codeInsee);
+        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
+        element.properties.hashtags =
+          has !== undefined && has !== -1
+            ? resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement[has]
+                .hashtags
+            : [];
+        //Tri les hastags par ordre croissant
+        element.properties.hashtags.sort((a, b) => {
+          return b.count - a.count;
         });
-        if (com) {
-          com.properties.debit = r.count;
-        }
-      });
-      resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement.forEach(
-        topHash => {
-          var com = this.communes.find(c => {
-            if (
-              c.properties.nom.toUpperCase().indexOf("LYON") == 0 &&
-              topHash._id == 69123
-            ) {
-              return true;
-            }
-            if (
-              c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0 &&
-              topHash._id == 13201
-            ) {
-              return true;
-            }
-            return "" + codeDept + "" + c.properties.code === topHash._id;
-          });
-          if (com) {
-            com.properties.hashtags = topHash.hashtags;
-          }
-        }
-      );
+        /* =================================================
+           Gestion du nombre de tweet par jour  par commune
+         =================================================== */
+        has = resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement
+          .map(function(x) {
+            return x._id;
+          })
+          .indexOf(codeInsee);
+        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
+        element.properties.debit =
+          has !== undefined && has !== -1
+            ? resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement[has]
+                .count
+            : [];
+        /* ===============================================================================
+              Gestion du pourcentage d'évolution des tweets par rapport au jour n-1
+         ================================================================================= */
+        has = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement
+          .map(function(x) {
+            return x.zoneNumber;
+          })
+          .indexOf(codeInsee);
+        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon 0
+        element.properties.evolveNbTweetDay =
+          has !== undefined && has !== -1
+            ? resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement[
+                has
+              ].percentage.toFixed(2)
+            : 0;
 
-      //Ajoute le pourcentage d'évolution des tweets par rapport au jour n-1
-      resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement.forEach(
-        item => {
-          var com = this.communes.find(c => {
-            return c.properties.code === item.zoneNumber.substring(2); //retire les deux premiers carac du départ car codeCommune ne contient que les 3 derniers chiffres
-          });
-          if (com) {
-            com.properties.evolveNbTweetDay = item.percentage.toFixed(2);
-          }
-        }
-      );
-
-      this.communes.forEach(c => {
-        if (c.properties.hashtags.size !== 0) {
-          c.properties.hashtags.sort((a, b) => {
-            return b.count - a.count;
-          });
-          if (c.properties.nom.toUpperCase().indexOf("LYON") == 0) {
-            this.communes.forEach(co => {
-              if (co.properties.nom.toUpperCase().indexOf("LYON") == 0) {
-                co.properties.hashtags = c.properties.hashtags;
-                co.properties.debit = c.properties.debit;
-              }
-            });
-          }
-          if (c.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0) {
-            this.communes.forEach(co => {
-              if (co.properties.nom.toUpperCase().indexOf("MARSEILLE") == 0) {
-                co.properties.hashtags = c.properties.hashtags;
-              }
-            });
-          }
-          if (c.properties.hashtags.length > 0)
-            c.properties.hashtags1 = c.properties.hashtags[0].hashtag;
+        //Si il existe des hastags pour cette commune ,initialise hastag1
+        if (element.properties.hashtags.length > 0) {
+          element.properties.hashtags1 = element.properties.hashtags[0].hashtag;
         }
         //Cherche le nombre de tweetMax pour la zone
         this.nbTweetMax =
-          c.properties.debit > this.nbTweetMax
-            ? c.properties.debit
+          element.properties.debit > this.nbTweetMax
+            ? element.properties.debit
             : this.nbTweetMax;
+        //Ajoute la commune au tableau contenant toutes les informations
+        this.communesInfo.push(element.properties);
       });
-      this.$store.state.currentFilter = "communeN";
+
+      this.$store.state.currentFilter = "communeN"; //Mise à jour du store
       this.updateZoom();
     },
+
     updateZoom() {
       switch (this.$store.state.currentFilter) {
         case "regionN":
