@@ -49,7 +49,10 @@
                       v-for="(hashtag, index) in props.currentItem.extraValues[2].value"
                       :key="hashtag.hashtag + hashtag.count"
                     >
-                      <span v-if="index < 5" class="text-left mx-auto">#{{hashtag.hashtag}}</span>
+                      <span
+                        v-if="index < 5"
+                        class="text-left mx-auto"
+                      >#{{hashtag.hashtag}} ({{hashtag.count}})</span>
                     </div>
                   </div>
                   <div v-else>Nous n'avons aucun tweet provenant de cet endroit.</div>
@@ -66,11 +69,14 @@
                     <h6
                       class
                       style="font-size:13px;"
-                      v-bind:class="[props.currentItem.extraValues[4].value>0 ? 'text-success' : 'text-danger']"
+                      v-bind:class="[props.currentItem.extraValues[4].value==0 ? 'text-secondary' :props.currentItem.extraValues[4].value>0?'text-success': 'text-danger']"
                     >
                       <span
-                        v-if="props.currentItem.extraValues[4].value!==undefined"
+                        v-if="props.currentItem.extraValues[4].value!==undefined && props.currentItem.extraValues[4].value<=0"
                       >{{props.currentItem.extraValues[4].value}} %</span>
+                      <span
+                        v-else-if="props.currentItem.extraValues[4].value>0"
+                      >+{{props.currentItem.extraValues[4].value}} %</span>
                     </h6>
                   </div>
                   <!-- /Evolution nb Tweets per days -->
@@ -300,101 +306,15 @@ export default {
       /*
        * Formatage des données recus pour insertion dans la carte leaflet
        */
-      resApollo.data.communes.forEach(element => {
-        element.properties.rien = "";
-        element.properties.hashtags = [];
-        element.properties.hashtags1 = "";
-        element.properties.debit = 0;
-        element.properties.evolveNbTweetDay = 0;
-
-        /* ==============================================================
-            Gestion des arrondissements ( Paris, Lyon, Marseille)
-         =============================================================== */
-        let codeInsee = codeDept + element.properties.code;
-        //Paris
-        if (
-          codeDept + element.properties.code > 75100 &&
-          codeDept + element.properties.code < 75121
-        ) {
-          codeInsee = "75056";
-        }
-        //Lyon
-        else if (
-          codeDept + element.properties.code > 69380 &&
-          codeDept + element.properties.code < 69390
-        ) {
-          codeInsee = "69123";
-        }
-        //Marseille
-        else if (
-          codeDept + element.properties.code > 13200 &&
-          codeDept + element.properties.code < 13217
-        ) {
-          codeInsee = "13055";
-        }
-
-        /* ================================
-           Gestion des hastags par commune
-         ================================= */
-
-        //Cherche si il existe des hastags pour la commune
-        var has = resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement
-          .map(function(x) {
-            return x._id;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
-        element.properties.hashtags =
-          has !== undefined && has !== -1
-            ? resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement[has]
-                .hashtags
-            : [];
-        //Tri les hastags par ordre croissant
-        element.properties.hashtags.sort((a, b) => {
-          return b.count - a.count;
-        });
-        /* =================================================
-           Gestion du nombre de tweet par jour  par commune
-         =================================================== */
-        has = resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement
-          .map(function(x) {
-            return x._id;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
-        element.properties.debit =
-          has !== undefined && has !== -1
-            ? resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement[has]
-                .count
-            : [];
-        /* ===============================================================================
-              Gestion du pourcentage d'évolution des tweets par rapport au jour n-1
-         ================================================================================= */
-        has = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement
-          .map(function(x) {
-            return x.zoneNumber;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon 0
-        element.properties.evolveNbTweetDay =
-          has !== undefined && has !== -1
-            ? resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement[
-                has
-              ].percentage.toFixed(2)
-            : 0;
-
-        //Si il existe des hastags pour cette commune ,initialise hastag1
-        if (element.properties.hashtags.length > 0) {
-          element.properties.hashtags1 = element.properties.hashtags[0].hashtag;
-        }
-        //Cherche le nombre de tweetMax pour la zone
-        this.nbTweetMax =
-          element.properties.debit > this.nbTweetMax
-            ? element.properties.debit
-            : this.nbTweetMax;
-        //Ajoute la commune au tableau contenant toutes les informations
-        this.communesInfo.push(element.properties);
-      });
+      this.formatData(
+        this.communes,
+        resApolloHash.data.topHashtagsFromAllCitiesInOneDepartement,
+        resApolloDeb.data.tweetsPerDayFromAllCitiesInOneDepartement,
+        resApolloEvolveNbTweet.data
+          .differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement,
+        "commune",
+        codeDept
+      );
 
       this.$store.state.currentFilter = "communeN"; //Mise à jour du store
       this.updateZoom();
@@ -542,73 +462,15 @@ export default {
         }
       });
       this.communesInfo = [];
-      resApollo.data.regions.forEach(element => {
-        let codeInsee = element.properties.code;
-        element.properties.rien = "";
-        element.properties.hashtags = [];
-        element.properties.hashtags1 = "";
-        element.properties.debit = 0;
-        element.properties.evolveNbTweetDay = 0;
-        /* ================================
-           Gestion des hastags par commune
-         ================================= */
-
-        //Cherche si il existe des hastags pour la commune
-        var has = resApolloHash.data.topHashtagsFromAllRegions
-          .map(function(x) {
-            return x._id;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
-        element.properties.hashtags =
-          has !== undefined && has !== -1
-            ? resApolloHash.data.topHashtagsFromAllRegions[has].hashtags
-            : [];
-        //Tri les hastags par ordre croissant
-        element.properties.hashtags.sort((a, b) => {
-          return b.count - a.count;
-        });
-        /* =================================================
-           Gestion du nombre de tweet par jour  par commune
-         =================================================== */
-        has = resApolloDeb.data.tweetsPerDayFromAllRegions
-          .map(function(x) {
-            return x._id;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
-        element.properties.debit =
-          has !== undefined && has !== -1
-            ? resApolloDeb.data.tweetsPerDayFromAllRegions[has].count
-            : [];
-        /* ===============================================================================
-              Gestion du pourcentage d'évolution des tweets par rapport au jour n-1
-         ================================================================================= */
-        has = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllRegions
-          .map(function(x) {
-            return x.zoneNumber;
-          })
-          .indexOf(codeInsee);
-        //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon 0
-        element.properties.evolveNbTweetDay =
-          has !== undefined && has !== -1
-            ? resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllRegions[
-                has
-              ].percentage.toFixed(2)
-            : 0;
-
-        //Si il existe des hastags pour cette commune ,initialise hastag1
-        if (element.properties.hashtags.length > 0) {
-          element.properties.hashtags1 = element.properties.hashtags[0].hashtag;
-        }
-        //Cherche le nombre de tweetMax pour la zone
-        this.nbTweetMax =
-          element.properties.debit > this.nbTweetMax
-            ? element.properties.debit
-            : this.nbTweetMax;
-        //Ajoute la commune au tableau contenant toutes les informations
-        this.communesInfo.push(element.properties);
-      });
+      this.formatData(
+        this.communes,
+        resApolloHash.data.topHashtagsFromAllRegions,
+        resApolloDeb.data.tweetsPerDayFromAllRegions,
+        resApolloEvolveNbTweet.data
+          .differenceOfNumberOfTweetsPerDayFromAllRegions,
+        "region",
+        0
+      );
     },
     async getDeptDataFromGeoJson() {
       this.nbTweetMax = 0; //Reset du nb de TweetMax
@@ -676,8 +538,56 @@ export default {
         }
       });
       this.communesInfo = [];
-      resApollo.data.departements.forEach(element => {
-        let codeInsee = element.properties.code;
+      this.formatData(
+        this.communes,
+        resApolloHash.data.topHashtagsFromAllDepartements,
+        resApolloDeb.data.tweetsPerDayFromAllDepartements,
+        resApolloEvolveNbTweet.data
+          .differenceOfNumberOfTweetsPerDayFromAllDepartements,
+        "departement",
+        0
+      );
+    },
+    formatData(
+      resApollo,
+      resApolloHash,
+      resApolloDeb,
+      resApolloEvolveNbTweet,
+      type,
+      codeDept
+    ) {
+      let codeInsee;
+      resApollo.forEach(element => {
+        if (type === "commune") {
+          /* ==============================================================
+            Gestion des arrondissements ( Paris, Lyon, Marseille)
+         =============================================================== */
+          codeInsee = codeDept + element.properties.code;
+          //Paris
+          if (
+            codeDept + element.properties.code > 75100 &&
+            codeDept + element.properties.code < 75121
+          ) {
+            codeInsee = "75056";
+          }
+          //Lyon
+          else if (
+            codeDept + element.properties.code > 69380 &&
+            codeDept + element.properties.code < 69390
+          ) {
+            codeInsee = "69123";
+          }
+          //Marseille
+          else if (
+            codeDept + element.properties.code > 13200 &&
+            codeDept + element.properties.code < 13217
+          ) {
+            codeInsee = "13055";
+          }
+        } else {
+          codeInsee = element.properties.code;
+        }
+
         element.properties.rien = "";
         element.properties.hashtags = [];
         element.properties.hashtags1 = "";
@@ -686,18 +596,15 @@ export default {
         /* ================================
            Gestion des hastags par commune
          ================================= */
-
         //Cherche si il existe des hastags pour la commune
-        var has = resApolloHash.data.topHashtagsFromAllDepartements
+        var has = resApolloHash
           .map(function(x) {
             return x._id;
           })
           .indexOf(codeInsee);
         //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
         element.properties.hashtags =
-          has !== undefined && has !== -1
-            ? resApolloHash.data.topHashtagsFromAllDepartements[has].hashtags
-            : [];
+          has !== undefined && has !== -1 ? resApolloHash[has].hashtags : [];
         //Tri les hastags par ordre croissant
         element.properties.hashtags.sort((a, b) => {
           return b.count - a.count;
@@ -705,20 +612,18 @@ export default {
         /* =================================================
            Gestion du nombre de tweet par jour  par commune
          =================================================== */
-        has = resApolloDeb.data.tweetsPerDayFromAllDepartements
+        has = resApolloDeb
           .map(function(x) {
             return x._id;
           })
           .indexOf(codeInsee);
         //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon tableau vide
         element.properties.debit =
-          has !== undefined && has !== -1
-            ? resApolloDeb.data.tweetsPerDayFromAllDepartements[has].count
-            : [];
+          has !== undefined && has !== -1 ? resApolloDeb[has].count : [];
         /* ===============================================================================
               Gestion du pourcentage d'évolution des tweets par rapport au jour n-1
          ================================================================================= */
-        has = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllDepartements
+        has = resApolloEvolveNbTweet
           .map(function(x) {
             return x.zoneNumber;
           })
@@ -726,9 +631,7 @@ export default {
         //Si has != -1 ( si trouvé ) affecte le tableau des hastags sinon 0
         element.properties.evolveNbTweetDay =
           has !== undefined && has !== -1
-            ? resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromAllDepartements[
-                has
-              ].percentage.toFixed(2)
+            ? resApolloEvolveNbTweet[has].percentage.toFixed(2)
             : 0;
 
         //Si il existe des hastags pour cette commune ,initialise hastag1
