@@ -6,7 +6,7 @@
       @update:zoom="zoomUpdated"
       @update:center="centerUpdated"
       @update:bounds="boundsUpdated"
-      @click="(event)=>getCoord(event)"
+      @click="(ev)=> setEvent(ev)"
       :options="{zoomControl: false}"
     >
       <l-tile-layer :url="url"></l-tile-layer>
@@ -28,8 +28,8 @@
               @mouseup="cardIsExpand=true"
               @mousedown="cardIsExpand=false"
             >
-              <div class="card-body">
-                <h5 class="card-title text-capitalize">{{currentFilter}}</h5>
+              <div class="card-body" v-if="props.currentItem.value!=undefined && props.currentItem.extraValues!=undefined && props.currentItem.extraValues[0]!=undefined">
+                <h5 class="card-title text-capitalize">{{$store.state.currentFilter}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{props.currentItem.name}}</h6>
 
                 <div
@@ -90,6 +90,56 @@
                   <!--/TopTweet -->
                 </div>
               </div>
+              <div class="card-body" v-else>
+                <h5 class="card-title text-capitalize">FRANCE</h5>
+
+                <div v-if="franceTopHash && franceNumber && franceDiff">
+                  <!-- TopTweet -->
+                  <hr />
+                  <div class="d-flex align-items-center justify-content-center">
+                    <h6 class="card-subtitle my-0 mr-1 text-muted">TopTweet</h6>
+                    <TwitterIcon class="fab twitter-icon text-muted" />
+                  </div>
+                  <div>
+                    <div
+                            class="list-group"
+                            v-for="(hashtag, index) in franceTopHash"
+                            :key="hashtag._id + hashtag.count"
+                    >
+                      <span v-if="index < 5" class="text-left mx-auto">#{{hashtag._id}}</span>
+                    </div>
+                  </div>
+
+                  <hr />
+                  <div class="d-flex align-items-center justify-content-center">
+                    <h6 class="card-subtitle my-0 mr-1 text-muted">Statistiques</h6>
+                    <StatIcon class="fas chart-bar-icon text-muted" />
+                  </div>
+
+                  <!-- Evolution nb Tweets per days -->
+                  <div class="d-flex align-items-center justify-content-between w-100 mt-2">
+                    <h6 class style="font-size:13px;">Evolution sur les dernière 24 h</h6>
+                    <h6
+                            class
+                            style="font-size:13px;"
+                            v-bind:class="[franceDiff>0 ? 'text-success' : 'text-danger']"
+                    >
+                      <span>{{parseInt(franceDiff * 100)/100}} %</span>
+                    </h6>
+                  </div>
+                  <!-- /Evolution nb Tweets per days -->
+
+                  <!-- Nb Tweets per days -->
+                  <div class="d-flex align-items-center justify-content-between w-100 mt-2">
+                    <h6 class style="font-size:13px;">Tweets par jours</h6>
+                    <h6
+                            style="font-size:13px;"
+                    >{{Math.round(franceNumber)}}</h6>
+                  </div>
+                  <!-- /Nb Tweets per days -->
+                  <!--/TopTweet -->
+                </div>
+              </div>
             </div>
           </template>
         </l-choropleth-layer>
@@ -132,7 +182,13 @@ export default {
       zoom: 6,
       center: [46.443004, 2.878054],
       bounds: null,
+      oldNewsId: [],
+      event: {},
       communes: {},
+      departements: [],
+      departementsInfo: [],
+      regions: [],
+      regionsInfo: [],
       communesInfo: [],
       pyDepartmentsData: [],
       currentFilter: "commune",
@@ -143,7 +199,10 @@ export default {
       mapOptions: {
         attributionControl: false
       },
-      currentStrokeColor: "333333"
+      currentStrokeColor: "333333",
+      franceTopHash: [],
+      franceNumber: 0,
+      franceDiff: 0
     };
   },
   created() {
@@ -158,10 +217,48 @@ export default {
         .addEventListener("click", () => {
           this.getCurrentLocation();
         });
+      // Set up des infos departementales et regionales puis française
+      this.getDeptDataFromGeoJson()
+      this.getRegDataFromGeoJson()
       this.updateZoom();
+      this.getFranceInfo()
     });
   },
   methods: {
+    async getFranceInfo() {
+      var newsId = this.getNewsId();
+      let resApolloHash = await this.$apollo.query({
+        query: gql`
+          query {
+            topHashtagsFromFrance(newsId: ${newsId}) {
+              _id
+              count
+            }
+          }
+        `
+      });
+      this.franceTopHash = resApolloHash.data.topHashtagsFromFrance
+      let resApolloDeb = await this.$apollo.query({
+        query: gql`
+          query {
+            numberOfTweetsPerDayFromFrance(newsId: ${newsId})
+          }
+        `
+      });
+      this.franceNumber = resApolloDeb.data.numberOfTweetsPerDayFromFrance
+      //Contient l'évolution du nombre de tweet par rapport au dernière 24h
+      let resApolloEvolveNbTweet = await this.$apollo.query({
+        query: gql`
+          query {
+           differenceOfNumberOfTweetsPerDayFromFrance(newsId: ${newsId})
+          }
+        `
+      });
+      this.franceDiff = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromFrance
+    },
+    setEvent(ev) {
+      this.event = ev
+    },
     zoomUpdated(zoom) {
       this.zoom = zoom;
     },
@@ -171,16 +268,18 @@ export default {
     boundsUpdated(bounds) {
       this.bounds = bounds;
     },
-    getCoord(event) {
+    getCoord() {
+      if (!this.event.latlng) {
+        return
+      }
       // Si on passe en commune on regarde où le user a cliqué
-      if (this.$store.state.currentFilter === "departement") {
-        this.getCommunesFromEvent(event.latlng.lat, event.latlng.lng);
+      if (this.$store.state.currentFilter === "departement" || this.$store.state.currentFilter === "commune") {
+        this.getCommunesFromEvent(this.event.latlng.lat, this.event.latlng.lng);
       }
 
       if (this.$store.state.currentFilter === "region") {
-        this.centerUpdated([event.latlng.lat, event.latlng.lng]);
+        this.centerUpdated([this.event.latlng.lat, this.event.latlng.lng]);
         this.$store.state.currentFilter = "departementN";
-        this.updateZoom();
       }
     },
     getCommunesFromEvent(lat, lng) {
@@ -397,14 +496,32 @@ export default {
       });
 
       this.$store.state.currentFilter = "communeN"; //Mise à jour du store
+      this.departements.forEach((d) => {
+        if (d.properties.code != codeDept) {
+          this.communes.push(d)
+        }
+      })
       this.updateZoom();
     },
 
     updateZoom() {
+      // Si les news ont changées on actualise les infos
+      var newNewsId = this.getNewsId()
+      if(this.oldNewsId !== newNewsId) {
+        this.getRegDataFromGeoJson();
+        this.getDeptDataFromGeoJson();
+        this.getFranceInfo()
+      } else {
+        if (this.event !== {}) {
+          this.getCoord()
+          this.event = {}
+        }
+      }
       switch (this.$store.state.currentFilter) {
         case "regionN":
           this.zoomUpdated(6);
-          this.getRegDataFromGeoJson();
+          this.communes = this.regions;
+          this.communesInfo = this.regionsInfo;
           this.value.key = "debit";
           this.value.metric = "";
           this.extraValues = [
@@ -428,7 +545,8 @@ export default {
           break;
         case "departementN":
           this.zoomUpdated(7);
-          this.getDeptDataFromGeoJson();
+          this.communes = this.departements;
+          this.communesInfo = this.departementsInfo;
           this.value.key = "debit";
           this.value.metric = "";
           this.extraValues = [
@@ -474,8 +592,15 @@ export default {
           this.$store.state.currentFilter = "commune";
           break;
       }
+      this.oldNewsId = newNewsId
     },
     async getRegDataFromGeoJson() {
+      // Si le filtre est différent on garde les infos de base
+      var saveCom, saveComInfo
+      if (this.$store.state.currentFilter.indexOf("region") === -1) {
+        saveCom = this.communes
+        saveComInfo = this.communesInfo
+      }
       this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
@@ -609,8 +734,19 @@ export default {
         //Ajoute la commune au tableau contenant toutes les informations
         this.communesInfo.push(element.properties);
       });
+      this.regions = this.communes;
+      this.regionsInfo = this.communesInfo;
+      if (this.$store.state.currentFilter.indexOf("region") === -1) {
+        this.communes = saveCom
+        this.communesInfo = saveComInfo
+      }
     },
     async getDeptDataFromGeoJson() {
+      var saveCom, saveComInfo
+      if (this.$store.state.currentFilter.indexOf("departemen") === -1) {
+        saveCom = this.communes
+        saveComInfo = this.communesInfo
+      }
       this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
@@ -743,6 +879,12 @@ export default {
         //Ajoute la commune au tableau contenant toutes les informations
         this.communesInfo.push(element.properties);
       });
+      this.departements = this.communes;
+      this.departementsInfo = this.communesInfo;
+      if (this.$store.state.currentFilter.indexOf("departement") === -1) {
+        this.communes = saveCom
+        this.communesInfo = saveComInfo
+      }
     }
   }
 };
