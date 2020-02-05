@@ -155,7 +155,7 @@
                   <!-- Nb Tweets per days -->
                   <div class="d-flex align-items-center justify-content-between w-100 mt-2">
                     <h6 class style="font-size:13px;">Tweets par jours</h6>
-                    <h6 style="font-size:13px;">{{Math.round(franceNumber)}}</h6>
+                    <h6 style="font-size:13px;">{{(franceNumber.toFixed(2))}}</h6>
                   </div>
                   <!-- /Nb Tweets per days -->
                   <!--/TopTweet -->
