@@ -5,8 +5,8 @@
     <div class="counter">
       <!-- Affichage des Tweets -->
       <div v-if="showTweet" class="full-height-width">
-        <div v-for="(item) in tweetTest" v-bind:key="item._id">
-          <div v-bind:style="item.placement" class="tweet" v-scroll-reveal>
+        <div v-for="(item) in tweets" v-bind:key="item._id">
+          <div v-bind:style="item.placement" class="tweet" v-scroll-reveal="{ duration: 1250 }">
             <h6>#{{ item.hashtag }}</h6>
             <span class="text-tweet">{{item.text}}</span>
           </div>
@@ -127,144 +127,95 @@ export default {
       value: 0,
       showCounter: false,
       showTweet: false,
-      tweetTest: [] /*[
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        },
-        {
-          hastag: "#PolyTweet",
-          text: "attribute to limit CSS to this ",
-          placement: ""
-        }
-      ]*/
+      tweets: [],
+      placementAllReadyTake: [],
+      placementTweetIndexAvaible: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      placement: [
+        { top: "10%", right: null, bottom: null, left: "15%" },
+        { top: "10%", right: null, bottom: null, left: "35%" },
+        { top: "10%", right: null, bottom: null, left: "55%" },
+        { top: "10%", right: null, bottom: null, left: "75%" },
+        { top: "35%", right: "10%", bottom: null, left: null },
+        { top: "60%", right: "10%", bottom: null, left: null },
+        { top: null, right: null, bottom: "10%", left: "15%" },
+        { top: null, right: null, bottom: "10%", left: "35%" },
+        { top: null, right: null, bottom: "10%", left: "55%" },
+        { top: null, right: null, bottom: "10%", left: "75%" },
+        { top: "35%", right: null, bottom: null, left: "10%" },
+        { top: "60%", right: null, bottom: null, left: "10%" }
+      ]
     };
   },
   props: {},
   created() {
+    // Query for number of tweets
+    this.$apollo.addSmartQuery("nbTweets", {
+      query: gql`
+        query {
+          totalNumberOfTweetsUsedByPolytweet
+        }
+      `,
+      update(data) {
+        this.value = data.totalNumberOfTweetsUsedByPolytweet;
+        // The returned value will update
+        return data.totalNumberOfTweetsUsedByPolytweet;
+      },
+      pollInterval: 1000 // ms
+    });
+
+    // Query for number of tweets
+    this.$apollo.addSmartQuery("last10Tweets", {
+      query: gql`
+        query {
+          last10tweets {
+            _id
+            hashtag
+            text
+          }
+        }
+      `,
+      update(data) {
+        //Cherche les éléments différents entre l'ancienne et la nouvelle requête
+        const elemDiff = data.last10tweets.filter(
+          elem => !this.tweets.find(({ _id }) => elem._id === _id)
+        );
+        //Pour chaque élément différent ajoute les données et remove ancien tweet
+        elemDiff.forEach(e => {
+          e.placement = this.tweets[this.tweets.length - 1].placement;
+          e.hashtag = Array.isArray(e.hashtag) ? e.hashtag[0] : e.hashtag;
+          this.tweets.pop();
+          this.tweets.unshift(e);
+        });
+        return data;
+      },
+      pollInterval: 1000 // ms
+    });
+
     this.getLast10Tweet();
-    /* setInterval(() => {
-      this.getNumberOfTweet();
-    }, 1000);*/
-    this.getNumberOfTweet();
+
+    setInterval(() => {
+      this.$apollo.queries.last10Tweets.refresh();
+      this.$apollo.queries.nbTweets.refresh();
+    }, 10000);
   },
   methods: {
     formatToPrice(value) {
       return `${value}`;
     },
     placeTweetOnScreen() {
-      let style = {
-        top: 10 + "%",
-        right: -5 + "%",
-        bottom: 0 + "%",
-        left: -5 + "%"
-      };
-      for (let i = 0; i < this.tweetTest.length; i++) {
-        this.tweetTest[i].placement = this.cssIncrementPosition(style, i);
+      for (let i = 0; i < this.tweets.length; i++) {
+        let rand = Math.floor(
+          Math.random() * Math.floor(this.placementTweetIndexAvaible.length)
+        );
+        let indexPlacement = this.placementTweetIndexAvaible[rand];
+        this.placementTweetIndexAvaible.splice(
+          this.placementTweetIndexAvaible.indexOf(indexPlacement),
+          1
+        );
+        this.tweets[i].placement = this.placement[indexPlacement];
+        this.placementAllReadyTake.push(indexPlacement);
       }
       this.showTweet = true;
-    },
-    cssIncrementPosition(style, i) {
-      //Version modulo
-      let mod = i % 6;
-      //Traitement Horizontal
-      if (mod <= 3) {
-        //Partie du haut
-        if (i % 12 < 6) {
-          style.right = "0%";
-        } else {
-          //Partie du bas
-          if (i % 12 == 6) {
-            style.left = "-5%";
-            style.right = "0%";
-          }
-          style.top = "0%";
-          style.bottom = "10%";
-        }
-        style.left.replace("%", "");
-        style.left = parseInt(style.left) + 20 + "%";
-      }
-      //Traitement Vertical
-      else {
-        //Partie de droite
-        if (i % 12 < 6) {
-          if (i % 12 == 4) {
-            style.top = "10%";
-            style.left = "0%";
-            style.right = "10%";
-          }
-          style.top.replace("%", "");
-          style.top = parseInt(style.top) + 25 + "%";
-        } else {
-          //Partie de gauche
-          if (i % 12 == 10) {
-            style.top = "10%";
-            style.left = "10%";
-            style.bottom = "0%";
-          }
-          style.top.replace("%", "");
-          style.top = parseInt(style.top) + 25 + "%";
-        }
-      }
-
-      let newStyle = {
-        top: style.top == "0%" ? null : style.top,
-        right: style.right == "0%" ? null : style.right,
-        bottom: style.bottom == "0%" ? null : style.bottom,
-        left: style.left == "0%" ? null : style.left
-      };
-      return newStyle;
     },
     async getLast10Tweet() {
       let resApollo = await this.$apollo.query({
@@ -284,31 +235,13 @@ export default {
           ? element.hashtag[0]
           : element.hashtag;
         element.placement = "";
+        element.isNew = false;
       });
-      this.tweetTest = tweetBeforeTransform;
+      this.tweets = tweetBeforeTransform;
       this.placeTweetOnScreen();
-    },
-    async getNumberOfTweet() {
-      let resApollo = await this.$apollo.query({
-        query: gql`
-          query {
-            totalNumberOfTweetsUsedByPolytweet
-          }
-        `
-      });
-      this.value = resApollo.data.totalNumberOfTweetsUsedByPolytweet;
     }
   },
-  watch: {
-    showCounter: {
-      handler: function(val, oldVal) {
-        console.log(val + " " + oldVal);
-        if (val && !oldVal) {
-          this.placeTweetOnScreen();
-        }
-      }
-    }
-  }
+  watch: {}
 };
 </script>
 
@@ -427,11 +360,20 @@ section {
 /*Tweets placement*/
 .tweet {
   position: absolute;
+  max-width: 250px;
+  overflow-wrap: break-word;
 }
 span.text-tweet {
   display: block;
   width: 250px;
   line-height: 1;
   font-size: 13px;
+}
+
+/* change navbar background on collapse */
+@media (max-width: 1300px) {
+  .counterAnim span {
+    font-size: 100px;
+  }
 }
 </style>

@@ -28,7 +28,10 @@
               @mouseup="cardIsExpand=true"
               @mousedown="cardIsExpand=false"
             >
-              <div class="card-body" v-if="props.currentItem.value!=undefined && props.currentItem.extraValues!=undefined && props.currentItem.extraValues[0]!=undefined">
+              <div
+                class="card-body"
+                v-if="props.currentItem.value!=undefined && props.currentItem.extraValues!=undefined && props.currentItem.extraValues[0]!=undefined"
+              >
                 <h5 class="card-title text-capitalize">{{$store.state.currentFilter}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{props.currentItem.name}}</h6>
 
@@ -64,7 +67,10 @@
                   </div>
 
                   <!-- Evolution nb Tweets per days -->
-                  <div class="d-flex align-items-center justify-content-between w-100 mt-2">
+                  <div
+                    class="d-flex align-items-center justify-content-between w-100 mt-2"
+                    v-if="getNewsId().length <= 2"
+                  >
                     <h6 class style="font-size:13px;">Evolution sur les dernière 24 h</h6>
                     <h6
                       class
@@ -83,7 +89,11 @@
 
                   <!-- Nb Tweets per days -->
                   <div class="d-flex align-items-center justify-content-between w-100 mt-2">
-                    <h6 class style="font-size:13px;">Tweets par jours</h6>
+                    <h6 class style="font-size:13px;">
+                      Tweets
+                      <span v-if="getNewsId().length <= 2">par jours</span>
+                      <span v-else>sur ce sujet</span>
+                    </h6>
                     <h6
                       style="font-size:13px;"
                     >{{Math.round(props.currentItem.extraValues[3].value)}}</h6>
@@ -108,11 +118,14 @@
                   </div>
                   <div>
                     <div
-                            class="list-group"
-                            v-for="(hashtag, index) in franceTopHash"
-                            :key="hashtag._id + hashtag.count"
+                      class="list-group"
+                      v-for="(hashtag, index) in franceTopHash"
+                      :key="hashtag._id + hashtag.count"
                     >
-                      <span v-if="index < 5" class="text-left mx-auto">#{{hashtag._id}}</span>
+                      <span
+                        v-if="index < 5"
+                        class="text-left mx-auto"
+                      >#{{hashtag._id}} ({{hashtag.count}})</span>
                     </div>
                   </div>
 
@@ -125,12 +138,16 @@
                   <!-- Evolution nb Tweets per days -->
                   <div class="d-flex align-items-center justify-content-between w-100 mt-2">
                     <h6 class style="font-size:13px;">Evolution sur les dernière 24 h</h6>
+
                     <h6
-                            class
-                            style="font-size:13px;"
-                            v-bind:class="[franceDiff>0 ? 'text-success' : 'text-danger']"
+                      class
+                      style="font-size:13px;"
+                      v-bind:class="[franceDiff==0 ? 'text-secondary' :franceDiff>0?'text-success': 'text-danger']"
                     >
-                      <span>{{parseInt(franceDiff * 100)/100}} %</span>
+                      <span
+                        v-if="franceDiff!==undefined && franceDiff<=0"
+                      >{{franceDiff.toFixed(2)}} %</span>
+                      <span v-else-if="franceDiff>0">+{{franceDiff.toFixed(2)}} %</span>
                     </h6>
                   </div>
                   <!-- /Evolution nb Tweets per days -->
@@ -138,9 +155,7 @@
                   <!-- Nb Tweets per days -->
                   <div class="d-flex align-items-center justify-content-between w-100 mt-2">
                     <h6 class style="font-size:13px;">Tweets par jours</h6>
-                    <h6
-                            style="font-size:13px;"
-                    >{{Math.round(franceNumber)}}</h6>
+                    <h6 style="font-size:13px;">{{Math.round(franceNumber)}}</h6>
                   </div>
                   <!-- /Nb Tweets per days -->
                   <!--/TopTweet -->
@@ -224,10 +239,10 @@ export default {
           this.getCurrentLocation();
         });
       // Set up des infos departementales et regionales puis française
-      this.getDeptDataFromGeoJson()
-      this.getRegDataFromGeoJson()
+      this.getDeptDataFromGeoJson();
+      this.getRegDataFromGeoJson();
       this.updateZoom();
-      this.getFranceInfo()
+      this.getFranceInfo();
     });
   },
   methods: {
@@ -243,7 +258,7 @@ export default {
           }
         `
       });
-      this.franceTopHash = resApolloHash.data.topHashtagsFromFrance
+      this.franceTopHash = resApolloHash.data.topHashtagsFromFrance;
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
@@ -251,7 +266,7 @@ export default {
           }
         `
       });
-      this.franceNumber = resApolloDeb.data.numberOfTweetsPerDayFromFrance
+      this.franceNumber = resApolloDeb.data.numberOfTweetsPerDayFromFrance;
       //Contient l'évolution du nombre de tweet par rapport au dernière 24h
       let resApolloEvolveNbTweet = await this.$apollo.query({
         query: gql`
@@ -260,10 +275,11 @@ export default {
           }
         `
       });
-      this.franceDiff = resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromFrance
+      this.franceDiff =
+        resApolloEvolveNbTweet.data.differenceOfNumberOfTweetsPerDayFromFrance;
     },
     setEvent(ev) {
-      this.event = ev
+      this.event = ev;
     },
     zoomUpdated(zoom) {
       this.zoom = zoom;
@@ -276,10 +292,13 @@ export default {
     },
     getCoord() {
       if (!this.event.latlng) {
-        return
+        return;
       }
       // Si on passe en commune on regarde où le user a cliqué
-      if (this.$store.state.currentFilter === "departement" || this.$store.state.currentFilter === "commune") {
+      if (
+        this.$store.state.currentFilter === "departement" ||
+        this.$store.state.currentFilter === "commune"
+      ) {
         this.getCommunesFromEvent(this.event.latlng.lat, this.event.latlng.lng);
       }
 
@@ -349,6 +368,7 @@ export default {
         str = 'code_dept: "' + codeDept + '"';
       }
       var newsId = this.getNewsId();
+
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -416,25 +436,25 @@ export default {
       );
 
       this.$store.state.currentFilter = "communeN"; //Mise à jour du store
-      this.departements.forEach((d) => {
+      this.departements.forEach(d => {
         if (d.properties.code != codeDept) {
-          this.communes.push(d)
+          this.communes.push(d);
         }
-      })
+      });
       this.updateZoom();
     },
 
     updateZoom() {
       // Si les news ont changées on actualise les infos
-      var newNewsId = this.getNewsId()
-      if(this.oldNewsId !== newNewsId) {
+      var newNewsId = this.getNewsId();
+      if (this.oldNewsId !== newNewsId) {
         this.getRegDataFromGeoJson();
         this.getDeptDataFromGeoJson();
-        this.getFranceInfo()
+        this.getFranceInfo();
       } else {
         if (this.event !== {}) {
-          this.getCoord()
-          this.event = {}
+          this.getCoord();
+          this.event = {};
         }
       }
       switch (this.$store.state.currentFilter) {
@@ -512,17 +532,18 @@ export default {
           this.$store.state.currentFilter = "commune";
           break;
       }
-      this.oldNewsId = newNewsId
+      this.oldNewsId = newNewsId;
     },
     async getRegDataFromGeoJson() {
       // Si le filtre est différent on garde les infos de base
-      var saveCom, saveComInfo
+      var saveCom, saveComInfo;
       if (this.$store.state.currentFilter.indexOf("region") === -1) {
-        saveCom = this.communes
-        saveComInfo = this.communesInfo
+        saveCom = this.communes;
+        saveComInfo = this.communesInfo;
       }
       this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
+
       let resApollo = await this.$apollo.query({
         query: gql`
           query {
@@ -599,15 +620,15 @@ export default {
       this.regions = this.communes;
       this.regionsInfo = this.communesInfo;
       if (this.$store.state.currentFilter.indexOf("region") === -1) {
-        this.communes = saveCom
-        this.communesInfo = saveComInfo
+        this.communes = saveCom;
+        this.communesInfo = saveComInfo;
       }
     },
     async getDeptDataFromGeoJson() {
-      var saveCom, saveComInfo
+      var saveCom, saveComInfo;
       if (this.$store.state.currentFilter.indexOf("departemen") === -1) {
-        saveCom = this.communes
-        saveComInfo = this.communesInfo
+        saveCom = this.communes;
+        saveComInfo = this.communesInfo;
       }
       this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
@@ -643,6 +664,7 @@ export default {
           }
         `
       });
+
       let resApolloDeb = await this.$apollo.query({
         query: gql`
           query {
@@ -687,8 +709,8 @@ export default {
       this.departements = this.communes;
       this.departementsInfo = this.communesInfo;
       if (this.$store.state.currentFilter.indexOf("departement") === -1) {
-        this.communes = saveCom
-        this.communesInfo = saveComInfo
+        this.communes = saveCom;
+        this.communesInfo = saveComInfo;
       }
     },
     formatData(
@@ -737,9 +759,9 @@ export default {
         element.properties.debit = 0;
         element.properties.evolveNbTweetDay = 0;
         /* ================================
-           Gestion des hastags par commune
+           Gestion des hastags par zone
          ================================= */
-        //Cherche si il existe des hastags pour la commune
+        //Cherche si il existe des hastags pour la zone
         var has = resApolloHash
           .map(function(x) {
             return x._id;
@@ -753,7 +775,7 @@ export default {
           return b.count - a.count;
         });
         /* =================================================
-           Gestion du nombre de tweet par jour  par commune
+           Gestion du nombre de tweet par jour  par zone
          =================================================== */
         has = resApolloDeb
           .map(function(x) {
@@ -777,7 +799,7 @@ export default {
             ? resApolloEvolveNbTweet[has].percentage.toFixed(2)
             : 0;
 
-        //Si il existe des hastags pour cette commune ,initialise hastag1
+        //Si il existe des hastags pour cette zone ,initialise hastag1
         if (element.properties.hashtags.length > 0) {
           element.properties.hashtags1 = element.properties.hashtags[0].hashtag;
         }
@@ -786,6 +808,22 @@ export default {
           element.properties.debit > this.nbTweetMax
             ? element.properties.debit
             : this.nbTweetMax;
+        let counter = 0;
+        if (this.getNewsId().length > 2) {
+          if (element.properties.hashtags.length > 0) {
+            let arr = [];
+            //Calcul le maximum des tweets
+            element.properties.hashtags.forEach(element => {
+              arr.push(element.count);
+            });
+            counter = arr.reduce((a, b) => a + b, 0);
+            element.properties.debit = counter;
+          }
+
+          this.nbTweetMax =
+            counter > this.nbTweetMax ? counter : this.nbTweetMax;
+        }
+
         //Ajoute la commune au tableau contenant toutes les informations
         this.communesInfo.push(element.properties);
       });

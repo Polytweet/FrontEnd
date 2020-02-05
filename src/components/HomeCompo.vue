@@ -1,12 +1,6 @@
 <template>
   <div class="home">
     <div class="svgHome">
-      <!--    <img
-        class="svgBackground"
-        src="@/assets/svg/homePage2.svg"
-        width="100%"
-        alt="Background home"
-      />-->
       <HomeSvg class="svgBackground" width="100%" alt="Background home" />
     </div>
     <div class="row">
@@ -15,9 +9,10 @@
           Polytweet, la solution pour connaître
           <br />tous les hastags à suivre
         </h3>
-        <p
-          class="mt-3"
-        >Lorem ipsum dolor sit amet consectetur adipisicing elit. Minus officiis enim sit impedit necessitatibus, fuga, obcaecati excepturi eos dolore reiciendis quasi nemo! Commodi asperiores a sapiente. Sunt nam necessitatibus minima.</p>
+        <p class="mt-3">
+          Avec Polytweet, suivez en temps réel l'évolution des derniers tweets les plus partagés en France ou tout simplement autour de chez vous .
+          Et coupler les avec les actualités françaises pour visualiser les tweets les plus partagés du moment.
+        </p>
         <router-link to="/carte">
           <button class="btn btn-primary mt-4">Découvrir l'application</button>
         </router-link>
