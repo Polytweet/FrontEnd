@@ -56,12 +56,12 @@
 
             <table class="d-flex listWrap table table-striped">
               <tbody>
-                <tr v-for="data in getNews" v-bind:key="data._id">
+                <tr v-for="data in getNews" v-bind:key="data._id" class="w-100">
                   <td
+                    class="newsContent d-flex justify-content-center align-items-center"
                     :disabled="data.chipsSelected==true"
                     v-bind:class="{ chipSelected: data.chipsSelected==true }"
                     v-on:click="addToChipsList(data)"
-                    class="newsContent d-flex justify-content-center align-items-center"
                   >{{data.title}}</td>
                 </tr>
               </tbody>
@@ -218,7 +218,7 @@ export default {
       return news;
     },
     getChipsList() {
-      return this.$store.state.chipsList
+      return this.$store.state.chipsList;
     }
   }
 };

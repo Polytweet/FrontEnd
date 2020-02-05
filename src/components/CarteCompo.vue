@@ -100,7 +100,7 @@
                   </div>
                   <GaugeCompo
                     v-bind:nbTweetDay="props.currentItem.extraValues[3].value"
-                    v-bind:nbTweetMax="nbTweetMax"
+                    v-bind:nbTweetMax="$store.state.currentFilter=='region'?nbTweetMaxRegion:$store.state.currentFilter=='departement'?nbTweetMaxDepartement:nbTweetMaxCommune"
                   ></GaugeCompo>
                   <!-- /Nb Tweets per days -->
                   <!--/TopTweet -->
@@ -215,6 +215,9 @@ export default {
       currentFilter: "commune",
       colorScale: ["90d0e7", "7baee9", "6270de"],
       nbTweetMax: 10,
+      nbTweetMaxRegion: 0,
+      nbTweetMaxDepartement: 0,
+      nbTweetMaxCommune: 0,
       value: {},
       extraValues: [],
       mapOptions: {
@@ -244,7 +247,6 @@ export default {
         this.getDeptDataFromGeoJson();
         this.updateZoom();
       });
-
     });
   },
   methods: {
@@ -353,7 +355,7 @@ export default {
       var nb = 0;
       this.$store.state.chipsList.forEach(n => {
         nb += 1;
-        if(nb === 1) {
+        if (nb === 1) {
           newsId = newsId + '"' + n._id + '",';
         }
       });
@@ -417,7 +419,7 @@ export default {
       let resApolloEvolveNbTweet = await this.$apollo.query({
         query: gql`
           query {
-           differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement(depCode:"${codeDept}"){zoneNumber,percentage}
+           differenceOfNumberOfTweetsPerDayFromAllCitiesInOneDepartement(depCode:"${codeDept}",newsId: ${newsId}){zoneNumber,percentage}
 
           }
         `
@@ -425,6 +427,7 @@ export default {
 
       this.communes = resApollo.data.communes;
       this.communesInfo = [];
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
 
       /*
        * Formatage des données recus pour insertion dans la carte leaflet
@@ -546,7 +549,6 @@ export default {
         saveCom = this.communes;
         saveComInfo = this.communesInfo;
       }
-      this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
 
       let resApollo = await this.$apollo.query({
@@ -596,7 +598,7 @@ export default {
       let resApolloEvolveNbTweet = await this.$apollo.query({
         query: gql`
           query {
-            differenceOfNumberOfTweetsPerDayFromAllRegions(newsId: []) {
+            differenceOfNumberOfTweetsPerDayFromAllRegions(newsId: ${newsId}) {
               zoneNumber
               percentage
             }
@@ -613,6 +615,8 @@ export default {
         }
       });
       this.communesInfo = [];
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
+
       this.formatData(
         this.communes,
         resApolloHash.data.topHashtagsFromAllRegions,
@@ -631,11 +635,10 @@ export default {
     },
     async getDeptDataFromGeoJson() {
       var saveCom, saveComInfo;
-      if (this.$store.state.currentFilter.indexOf("departemen") === -1) {
+      if (this.$store.state.currentFilter.indexOf("departement") === -1) {
         saveCom = this.communes;
         saveComInfo = this.communesInfo;
       }
-      this.nbTweetMax = 0; //Reset du nb de TweetMax
       var newsId = this.getNewsId();
       let resApollo = await this.$apollo.query({
         query: gql`
@@ -684,7 +687,7 @@ export default {
       let resApolloEvolveNbTweet = await this.$apollo.query({
         query: gql`
           query {
-            differenceOfNumberOfTweetsPerDayFromAllDepartements(newsId: []) {
+            differenceOfNumberOfTweetsPerDayFromAllDepartements(newsId: ${newsId}) {
               zoneNumber
               percentage
             }
@@ -701,6 +704,8 @@ export default {
         }
       });
       this.communesInfo = [];
+      this.nbTweetMax = 0; //Reset du nb de TweetMax
+
       this.formatData(
         this.communes,
         resApolloHash.data.topHashtagsFromAllDepartements,
@@ -718,6 +723,7 @@ export default {
         this.communesInfo = saveComInfo;
       }
     },
+
     formatData(
       resApollo,
       resApolloHash,
@@ -808,11 +814,7 @@ export default {
         if (element.properties.hashtags.length > 0) {
           element.properties.hashtags1 = element.properties.hashtags[0].hashtag;
         }
-        //Cherche le nombre de tweetMax pour la zone
-        this.nbTweetMax =
-          element.properties.debit > this.nbTweetMax
-            ? element.properties.debit
-            : this.nbTweetMax;
+
         let counter = 0;
         if (this.getNewsId().length > 2) {
           if (element.properties.hashtags.length > 0) {
@@ -824,9 +826,21 @@ export default {
             counter = arr.reduce((a, b) => a + b, 0);
             element.properties.debit = counter;
           }
-
           this.nbTweetMax =
             counter > this.nbTweetMax ? counter : this.nbTweetMax;
+        } else {
+          //Cherche le nombre de tweetMax pour la zone
+          this.nbTweetMax =
+            element.properties.debit > this.nbTweetMax
+              ? element.properties.debit
+              : this.nbTweetMax;
+        }
+        if (type == "region") {
+          this.nbTweetMaxRegion = this.nbTweetMax;
+        } else if (type === "departement") {
+          this.nbTweetMaxDepartement = this.nbTweetMax;
+        } else {
+          this.nbTweetMaxCommune = this.nbTweetMax;
         }
 
         //Ajoute la commune au tableau contenant toutes les informations

@@ -38,8 +38,8 @@ export default {
   methods: {
     calculIndicator() {
       this.minIndicator = 0;
-      this.medIndicator = Math.round(this.nbTweetMax / 2);
       this.maxIndicator = Math.round(this.nbTweetMax);
+      this.medIndicator = Math.round(this.nbTweetMax / 2);
     }
   },
   computed: {
