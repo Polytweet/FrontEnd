@@ -7,8 +7,21 @@
       <div v-if="showTweet" class="full-height-width">
         <div v-for="(item) in tweets" v-bind:key="item._id">
           <div v-bind:style="item.placement" class="tweet" v-scroll-reveal="{ duration: 1250 }">
-            <h6>#{{ item.hashtag }}</h6>
-            <span class="text-tweet">{{item.text}}</span>
+            <h6
+              v-bind:class="{ polymobilitech: item.hashtag =='PolyMobilyTech'||item.hashtag =='polymobilytech' || item.hashtag=='Polymobilytech' }"
+            >
+              <span
+                v-if="item.hashtag =='PolyMobilyTech'||item.hashtag =='polymobilytech' || item.hashtag=='Polymobilytech'"
+              >🦄</span>
+              #{{ item.hashtag }}
+              <span
+                v-if="item.hashtag =='PolyMobilyTech'||item.hashtag =='polymobilytech' || item.hashtag=='Polymobilytech'"
+              >🦄</span>
+            </h6>
+            <span
+              class="text-tweet"
+              v-bind:class="{ polymobilitech: item.hashtag =='PolyMobilyTech'||item.hashtag =='polymobilytech' }"
+            >{{item.text}}</span>
           </div>
         </div>
       </div>
@@ -180,23 +193,26 @@ export default {
           elem => !this.tweets.find(({ _id }) => elem._id === _id)
         );
         //Pour chaque élément différent ajoute les données et remove ancien tweet
-        elemDiff.forEach(e => {
-          e.placement = this.tweets[this.tweets.length - 1].placement;
-          e.hashtag = Array.isArray(e.hashtag) ? e.hashtag[0] : e.hashtag;
-          this.tweets.pop();
-          this.tweets.unshift(e);
-        });
+        if (this.tweets.length > 0) {
+          elemDiff.forEach(e => {
+            e.placement = this.tweets[this.tweets.length - 1].placement;
+            e.hashtag = Array.isArray(e.hashtag) ? e.hashtag[0] : e.hashtag;
+
+            this.tweets.pop();
+            this.tweets.unshift(e);
+          });
+        }
         return data;
       },
       pollInterval: 1000 // ms
     });
 
     this.getLast10Tweet();
-
-    setInterval(() => {
-      this.$apollo.queries.last10Tweets.refresh();
-      this.$apollo.queries.nbTweets.refresh();
-    }, 10000);
+    this.$apollo.queries.last10Tweets.refresh();
+    this.$apollo.queries.nbTweets.refresh();
+    /* setInterval(() => {
+     
+    }, 10000);*/
   },
   methods: {
     formatToPrice(value) {
@@ -374,6 +390,46 @@ span.text-tweet {
 @media (max-width: 1300px) {
   .counterAnim span {
     font-size: 100px;
+  }
+}
+
+.polymobilitech {
+  animation: rainbow 2s infinite;
+}
+
+@-webkit-keyframes rainbow {
+  0% {
+    color: orange;
+  }
+  10% {
+    color: purple;
+  }
+  20% {
+    color: red;
+  }
+  30% {
+    color: CadetBlue;
+  }
+  40% {
+    color: yellow;
+  }
+  50% {
+    color: coral;
+  }
+  60% {
+    color: green;
+  }
+  70% {
+    color: cyan;
+  }
+  80% {
+    color: DeepPink;
+  }
+  90% {
+    color: DodgerBlue;
+  }
+  100% {
+    color: orange;
   }
 }
 </style>
