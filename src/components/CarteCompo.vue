@@ -239,10 +239,12 @@ export default {
           this.getCurrentLocation();
         });
       // Set up des infos departementales et regionales puis française
-      this.getDeptDataFromGeoJson();
-      this.getRegDataFromGeoJson();
-      this.updateZoom();
-      this.getFranceInfo();
+      this.getRegDataFromGeoJson().then(() => {
+        this.getDeptDataFromGeoJson();
+        this.updateZoom();
+        this.getFranceInfo();
+      });
+
     });
   },
   methods: {
