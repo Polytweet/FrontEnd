@@ -239,10 +239,10 @@ export default {
           this.getCurrentLocation();
         });
       // Set up des infos departementales et regionales puis française
+      this.getFranceInfo();
       this.getRegDataFromGeoJson().then(() => {
         this.getDeptDataFromGeoJson();
         this.updateZoom();
-        this.getFranceInfo();
       });
 
     });
@@ -353,7 +353,9 @@ export default {
       var nb = 0;
       this.$store.state.chipsList.forEach(n => {
         nb += 1;
-        newsId = newsId + '"' + n._id + '",';
+        if(nb === 1) {
+          newsId = newsId + '"' + n._id + '",';
+        }
       });
       if (nb > 0) {
         newsId = newsId.substr(0, newsId.length - 1);
@@ -450,10 +452,10 @@ export default {
       // Si les news ont changées on actualise les infos
       var newNewsId = this.getNewsId();
       if (this.oldNewsId !== newNewsId) {
+        this.getFranceInfo();
         this.getRegDataFromGeoJson().then(() => {
           this.getDeptDataFromGeoJson();
         });
-        this.getFranceInfo();
       } else {
         if (this.event !== {}) {
           this.getCoord();
