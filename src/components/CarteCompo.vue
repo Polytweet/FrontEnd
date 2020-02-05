@@ -450,8 +450,9 @@ export default {
       // Si les news ont changées on actualise les infos
       var newNewsId = this.getNewsId();
       if (this.oldNewsId !== newNewsId) {
-        this.getRegDataFromGeoJson();
-        this.getDeptDataFromGeoJson();
+        this.getRegDataFromGeoJson().then(() => {
+          this.getDeptDataFromGeoJson();
+        });
         this.getFranceInfo();
       } else {
         if (this.event !== {}) {
